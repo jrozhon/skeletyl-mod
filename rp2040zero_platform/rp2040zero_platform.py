@@ -76,7 +76,7 @@ WINDOW_FRONT_GAP = 1.5         # floor window ends this far from the PCB front e
 CAP_RELIEF = 0.6               # ring cap lowered to PCB underside minus this, under the board
 ZIP_SLOT_W = 2.0               # zip-tie slot width (X), directly outside the PCB edge
 ZIP_SLOT_L = 5.0               # zip-tie slot length (Y)
-ZIP_SLOT_Y0 = (-18.0, -12.0)   # Y start of each slot pair (kept clear of ring B's pocket)
+ZIP_SLOT_Y0 = (-21.0, -14.0)   # Y start of each slot pair (kept clear of ring B's pocket)
 
 # ---------------------------------------------------------------------------
 # PJ-320A TRRS jack
