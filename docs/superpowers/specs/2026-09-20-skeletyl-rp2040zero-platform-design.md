@@ -71,10 +71,23 @@ All numbers are defaults of named parameters in the script.
 
 ### 2. Ring pockets (×2, at A and B)
 
-- Bore Ø10.4 from Z −4 to 0 (open at the bottom).
-- Outer Ø12.8 cylinder from Z −4 to +2, fused with the plate.
-- Cap: Z 0…2, Ø4.5 through hole for M4.
-- Screw: M4 × 6 or 8 button head into the case insert.
+The case rings are not free-standing cylinders (measured from the V4 STL):
+ring A hangs off a slanted wall at X ≈ −4.2…−5.1 with fillets filling the
+whole X < 0 side below Z = 0; ring B is a blob with a flat face at X = 30.9
+(from the rear wall up to Y = −24.5), a top face at Z = +0.25, and flares
+into the rear/right walls, leaving free space only in the 15°…195° sector.
+
+- Bore Ø10.4 from Z −4 up to the ring's top (A: 0, B: 0.25), open at the
+  bottom; for ring B the bore also follows the flat face (X ≥ 30.6,
+  Y ≤ −24.2).
+- Seat: a full Ø9.2 disc from the ring top to Z = 2 under the screw head.
+- Boss: Ø12.8 cylinder from Z −4 to +2, kept only where the case is free —
+  ring A: X ≥ −3.8, and X ≥ 0.5 below Z = 0; ring B: the half-space 0.5 mm
+  past the centre toward 105°.
+- Ø4.5 through hole for M4.
+- Screw: M4 × 6 or 8 with a head ≤ Ø7 (DIN 912 socket head): at ring B the
+  rear wall is 3.5 mm from the screw axis, so a Ø7.6 button head would
+  touch it.
 - Ring B is only 3.5 mm from the rear wall and the case ring itself merges
   into the wall, so its pocket is cut off by the same rear trim as the plate
   (Y ≥ −31.3): the boss and bore are open toward the wall on that side.
