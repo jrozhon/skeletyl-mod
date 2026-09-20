@@ -67,7 +67,10 @@ All numbers are defaults of named parameters in the script.
   segment.
 - Placed with the KiCad → platform transform, then the rear edge is trimmed
   to Y ≥ −31.3 (0.5 mm from the wall).
-- Thickness 2 mm, Z −4…−2.
+- Z −4.72…−2 (2.72 mm): the plate bottom is derived as the jack shelf bottom
+  (`JACK_HOLE_Z − JACK_AXIS_H − JACK_FLOOR_T`) so the whole underside is one
+  plane and the part prints flat without supports. 3.28 mm remain above the
+  bottom plate (Z −8) for a zip tie.
 
 ### 2. Ring pockets (×2, at A and B)
 
@@ -79,15 +82,18 @@ into the rear/right walls, leaving free space only in the 15°…195° sector.
 
 - Bore Ø10.4 from Z −4 up to the ring's top (A: 0, B: 0.25), open at the
   bottom; for ring B the bore also follows the flat face (X ≥ 30.6,
-  Y ≤ −24.2).
+  Y ≤ −24.2 (0.3 mm clearance, `RING_B_FLAT_CLEAR`)).
 - Seat: a full Ø9.2 disc from the ring top to Z = 2 under the screw head.
 - Boss: Ø12.8 cylinder from Z −4 to +2, kept only where the case is free —
-  ring A: X ≥ −3.8, and X ≥ 0.5 below Z = 0; ring B: the half-space 0.5 mm
-  past the centre toward 105°.
+  ring A: X ≥ 0.5 (the wall and its fillets occupy the X < 0 side; the seat
+  disc alone carries the head there); ring B: the half-space 0.5 mm past the
+  centre toward 105°.
 - Ø4.5 through hole for M4.
 - Screw: M4 × 6 or 8 with a head ≤ Ø7 (DIN 912 socket head): at ring B the
   rear wall is 3.5 mm from the screw axis, so a Ø7.6 button head would
-  touch it.
+  touch it. The right rail stops 1 mm in front of ring B's flat face
+  (Y ≥ −23.5) so a Ø7 head has a clear footprint; a test sweeps a
+  Ø7.4 × 2.4 mm volume above each cap.
 - Ring B is only 3.5 mm from the rear wall and the case ring itself merges
   into the wall, so its pocket is cut off by the same rear trim as the plate
   (Y ≥ −31.3): the boss and bore are open toward the wall on that side.
@@ -109,13 +115,15 @@ into the rear/right walls, leaving free space only in the 15°…195° sector.
     stop ~1.6 mm short of the long-edge ends and ~3.9 mm short of the far
     corners, so the seats rest on bare PCB.)
 - Guides: side rails 1.5 thick, 0.4 clearance to the board (inner faces at
-  X 11.65 and 30.45), from Y −31.3 to −6.1, Z −4…4.5. Front end-stop 1.5
-  thick at Y −7.6…−6.1 between the rails, same height. Rails are interrupted
-  where zip-tie slots pass.
-- Floor window: the plate is cut away under the board, X 12.5…29.6,
-  Y −29.5…−9.5, leaving the cradle and corner seats attached to the
-  surrounding plate. Gives button access (BOOT/RESET end up at Z ≈ +0.9 next
-  to the USB-C) and component clearance.
+  X 11.65 and 30.45); left rail from Y −31.3, right rail from Y −23.5
+  (`RING_B_FLAT_Y_TOP + RAIL_R_GAP`), both to −6.1, Z −4.72…4.5. Front
+  end-stop 1.5 thick at Y −7.6…−6.1 between the rails, same height. Rails
+  are interrupted where zip-tie slots pass.
+- Floor window: the plate is cut away under the board, X 13.55…28.55,
+  Y −29.5…−9.5 (1.5 mm strips remain beside the zip-tie slots), leaving the
+  cradle and corner seats attached to the surrounding plate. Gives button
+  access (BOOT/RESET end up at Z ≈ +0.9 next to the USB-C) and component
+  clearance.
 - Zip-tie slots: 2 (X) × 5 (Y) through the plate and the rails, directly
   outside the board edges (X 10.05…12.05 and 30.05…32.05), one pair at
   Y −21…−16 and one at Y −14…−9 (both clear of ring B's pocket, whose
@@ -130,12 +138,12 @@ into the rear/right walls, leaving free space only in the 15°…195° sector.
 
 - Jack axis X = 5.0. Body 6 wide → X 2.0…8.0; pocket X 1.8…8.2 (0.2 side
   clearance).
-- Shelf top (jack mounting face) Z = −3.75 → barrel axis Z = −1.25. Shelf
-  block extends down to Z = −5.25 (1.5 mm floor) and spans the pocket plus
-  its walls.
+- Shelf top at Z = JACK_HOLE_Z − 2.5 = −3.72; 1.0 mm floor below it
+  (Z = −4.72), which is also the plate bottom, and spans the pocket plus its
+  walls.
 - Body front face at Y = −31.6 (0.2 from the wall); nose enters the wall
   hole. Pocket length 12.3 → end-stop inner face at Y = −19.3.
-- Walls 1.5 thick on the two long sides and the front end, Z −5.25…+1.25
+- Walls 1.5 thick on the two long sides and the front end, Z −4.72…+1.28
   (full body height). Open toward the wall.
 - Leg slots: 1.6 (X) × 10.0 (Y) through the shelf on *both* sides, centred
   0.8 mm inboard of each body side face (X 2.0…3.6 and 6.4…8.0), Y
@@ -176,8 +184,8 @@ boss included — lies behind the rear trim. Single solid, checked with
    ring outer surface) — reported by region so it is obviously benign.
 3. Section overlays (platform over case) through: ring A, ring B, the jack
    axis, the USB slot centre. Saved as PNGs for eyeballing clearances.
-4. Bounding-box sanity: platform Z within −5.25…4.5; nothing below Z −5.25
-   (bottom plate at −8, zip-tie clearance).
+4. Bounding-box sanity: platform Z within −4.72…4.5; the underside is one
+   plane (ZMin == PLATE_Z0).
 
 ## Assembly notes (go in the README)
 
@@ -190,6 +198,9 @@ boss included — lies behind the rear trim. Single solid, checked with
   `keyboards/bastardkb/skeletyl/keymaps/jrozhon/config.h` (qmk_userspace)
   are Splinky-only.
 - Before printing, measure the actual USB-C height and overhang on your
-  board and set `USB_C_HEIGHT` / `USB_OVERHANG` if they differ.
+  board and set `USB_H` / `USB_OVERHANG` if they differ.
 - Tightest tolerances: USB-C vs slot (≈0.9 mm each side) and jack barrel vs
   hole (≈0.3 mm). `BOARD_X_SHIFT` and `JACK_AXIS_X` are the knobs.
+- USB-C reach: the receptacle face is ~3 mm behind the case's outer face;
+  use a cable whose overmold fits the 10.8 × 7 mm slot.
+- Screw heads ≤ Ø7 (DIN 912).

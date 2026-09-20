@@ -5,7 +5,7 @@ Usage: python3 check_clearance.py [path/to/case_v4_103.stl]
 Samples the case surface inside the platform's bounding box and reports
 sample points that fall inside the platform solid. Only points hugging a
 case ring (the Ø10.4 bore around the Ø10 ring) are tolerated. Also writes
-four cross-section PNGs (platform red, case blue) for eyeballing.
+five cross-section PNGs (platform red, case blue) for eyeballing.
 """
 import os
 import struct

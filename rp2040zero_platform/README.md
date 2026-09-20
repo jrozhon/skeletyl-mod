@@ -19,8 +19,10 @@ added to the active document.
 
 ## Print
 
-Flat, pockets up, no supports. 0.2 mm layers, 3+ perimeters. Mirror the STL in
-the slicer for the other half, exactly like the case.
+Flat, pockets up, no supports: the whole underside is one plane. The ring
+caps bridge over the Ø10.4 bores (≤ 10 mm spans) and print fine at 0.2 mm
+layers. 3+ perimeters. Mirror the STL in the slicer for the other half,
+exactly like the case.
 
 ## Assemble
 
@@ -29,6 +31,10 @@ the slicer for the other half, exactly like the case.
 2. Place the RP2040-Zero upside down: USB-C toward the wall resting on the
    cradle, far corners on the two seats. Wire it on the flat (label) side,
    which faces up. Zip-tie through the slots (under the plate, over the board).
+   The USB-C receptacle sits ~3 mm behind the case's outer face (the
+   RP2040-Zero's connector only overhangs its PCB by 1.3 mm), so the cable's
+   overmold must fit through the 10.8 × 7 mm slot; slim cables work, chunky
+   ones don't.
 3. Slip the ring pockets over the case rings, screw down.
 4. BOOT/RESET face the bottom plate: remove the plate and press through the
    floor window with a toothpick. Put `QK_BOOT` in the keymap; the Splinky
@@ -43,6 +49,9 @@ the slicer for the other half, exactly like the case.
 | `BOARD_X_SHIFT` | 0.0 | Sideways nudge if the USB-C is off-centre in the slot |
 | `JACK_AXIS_H` | 2.5 | Barrel axis height above the jack's mounting face |
 | `JACK_AXIS_X` | 5.0 | Sideways nudge for the jack |
+| `HEAD_D` | 7.0 | Largest screw head; ring B is 3.5 mm from the rear wall and the right rail |
+| `RAIL_R_GAP` | 1.0 | Right rail rear end in front of ring B (keeps the head footprint and the rail's foundation clear) |
+| `WINDOW_INSET_X` | 1.5 | Strip left beside each zip-tie slot |
 
 All other dimensions are in the parameter block at the top of the script.
 
@@ -53,4 +62,4 @@ All other dimensions are in the parameter block at the top of the script.
 
 Samples the case surface and reports any sample inside the platform (only
 bore/ring proximity is allowed) and writes `sec_*.png` cross-sections.
-Last run: 2026-09-20 — 13486 points inside, all within the ring bores; no collisions.
+Last run: 2026-09-20 — 13476 points inside, all within the ring bores; no collisions.
