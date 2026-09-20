@@ -76,7 +76,7 @@ WINDOW_FRONT_GAP = 1.5         # floor window ends this far from the PCB front e
 CAP_RELIEF = 0.6               # ring cap lowered to PCB underside minus this, under the board
 ZIP_SLOT_W = 2.0               # zip-tie slot width (X), directly outside the PCB edge
 ZIP_SLOT_L = 5.0               # zip-tie slot length (Y)
-ZIP_SLOT_Y0 = (-21.0, -14.0)   # Y start of each slot pair (kept clear of ring B's pocket)
+ZIP_SLOT_Y0 = (-18.0, -12.0)   # Y start of each slot pair (kept clear of ring B's pocket)
 
 # ---------------------------------------------------------------------------
 # PJ-320A TRRS jack
@@ -107,6 +107,20 @@ def kicad_to_local(p):
     c, s = math.cos(_DELTA), math.sin(_DELTA)
     return (x * c - y * s, x * s + y * c)
 
+
+# Board placement derived from the USB slot: the connector centre sits on the
+# slot centre; with the board upside down the PCB is USB_H above the shell.
+USB_CENTER_Z = (USB_SLOT_Z[0] + USB_SLOT_Z[1]) / 2.0
+USB_BOTTOM_Z = USB_CENTER_Z - USB_H / 2.0
+PCB_BOTTOM_Z = USB_BOTTOM_Z + USB_H          # component side (faces down)
+PCB_TOP_Z = PCB_BOTTOM_Z + BOARD_T           # flat solder side (faces up)
+BOARD_CX = (USB_SLOT_X[0] + USB_SLOT_X[1]) / 2.0 + BOARD_X_SHIFT
+BOARD_X0 = BOARD_CX - BOARD_W / 2.0
+BOARD_X1 = BOARD_CX + BOARD_W / 2.0
+BOARD_Y0 = WALL_INNER_Y - USB_INTO_WALL + USB_OVERHANG   # rear (USB) edge
+BOARD_Y1 = BOARD_Y0 + BOARD_L                            # front edge
+RAIL_X0 = BOARD_X0 - BOARD_CLEAR             # inner face of the left rail
+RAIL_X1 = BOARD_X1 + BOARD_CLEAR             # inner face of the right rail
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -180,13 +194,69 @@ def make_ring_cutters(cx, cy):
 
 
 # ---------------------------------------------------------------------------
+# RP2040-Zero pocket
+# ---------------------------------------------------------------------------
+def make_board_additions():
+    """Rails, front end-stop, USB-C cradle and the two far corner seats."""
+    stop_y0 = BOARD_Y1 + BOARD_CLEAR
+    stop_y1 = stop_y0 + RAIL_T
+    parts = [
+        box(RAIL_X0 - RAIL_T, RAIL_X0, PLATE_REAR_Y, stop_y1, PLATE_Z0, RAIL_TOP_Z),
+        box(RAIL_X1, RAIL_X1 + RAIL_T, PLATE_REAR_Y, stop_y1, PLATE_Z0, RAIL_TOP_Z),
+        box(RAIL_X0 - RAIL_T, RAIL_X1 + RAIL_T, stop_y0, stop_y1, PLATE_Z0, RAIL_TOP_Z),
+        # Cradle: the USB-C shell rests on this and sets the connector height.
+        box(BOARD_CX - CRADLE_W / 2, BOARD_CX + CRADLE_W / 2,
+            PLATE_REAR_Y, PLATE_REAR_Y + CRADLE_L, PLATE_Z0, USB_BOTTOM_Z),
+        # Corner seats under the pad-free far corners of the PCB.
+        box(BOARD_X0, BOARD_X0 + SEAT_W, BOARD_Y1 - SEAT_L, BOARD_Y1, PLATE_Z0, PCB_BOTTOM_Z),
+        box(BOARD_X1 - SEAT_W, BOARD_X1, BOARD_Y1 - SEAT_L, BOARD_Y1, PLATE_Z0, PCB_BOTTOM_Z),
+    ]
+    shape = parts[0]
+    for p in parts[1:]:
+        shape = shape.fuse(p)
+    return shape
+
+
+def make_window():
+    """Floor window under the board (button access, component clearance)."""
+    return box(BOARD_X0 + WINDOW_INSET_X, BOARD_X1 - WINDOW_INSET_X,
+               BOARD_Y0 + WINDOW_REAR_GAP, BOARD_Y1 - WINDOW_FRONT_GAP,
+               PLATE_Z0 - 1.0, PLATE_Z1 + 1.0)
+
+
+def make_zip_slots():
+    """Zip-tie slots just outside the PCB edges, through plate and rails."""
+    shape = None
+    for y0 in ZIP_SLOT_Y0:
+        for x0 in (BOARD_X0 - ZIP_SLOT_W, BOARD_X1):
+            slot = box(x0, x0 + ZIP_SLOT_W, y0, y0 + ZIP_SLOT_L,
+                       PLATE_Z0 - 1.0, RAIL_TOP_Z + 1.0)
+            shape = slot if shape is None else shape.fuse(slot)
+    return shape
+
+
+def make_board_cutters():
+    """Window + zip-tie slots (convenience; build() applies them separately)."""
+    return make_window().fuse(make_zip_slots())
+
+
+def make_cap_relief():
+    """Volume above the board-pocket footprint that ring caps must not enter."""
+    return box(RAIL_X0, RAIL_X1, PLATE_REAR_Y - 1.0, BOARD_Y1 + 1.0,
+               PCB_BOTTOM_Z - CAP_RELIEF, CAP_TOP_Z + 1.0)
+
+
+# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 def build():
     """Return the finished platform as a single solid."""
-    shape = make_plate()
+    shape = make_plate().cut(make_window())
+    relief = make_cap_relief()
     for cx, cy in RING_CENTRES:
-        shape = shape.fuse(make_ring_pocket_outer(cx, cy))
+        shape = shape.fuse(make_ring_pocket_outer(cx, cy).cut(relief))
+    shape = shape.fuse(make_board_additions())
+    shape = shape.cut(make_zip_slots())
     # Cut ring bores and screw holes last: anything fused over a ring must
     # stay open where the case ring sits.
     for cx, cy in RING_CENTRES:

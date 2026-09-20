@@ -75,5 +75,85 @@ class RingPocketTest(unittest.TestCase):
                 self.assertTrue(inside(self.shape, cx + 2.4, cy, z))
 
 
+class BoardPocketTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.shape = rp.build()
+        cls.cx = rp.BOARD_CX
+
+    def test_single_valid_solid(self):
+        self.assertTrue(self.shape.isValid())
+        self.assertEqual(len(self.shape.Solids), 1)
+
+    def test_derived_heights_put_usb_c_in_the_slot_centre(self):
+        slot_c = (rp.USB_SLOT_Z[0] + rp.USB_SLOT_Z[1]) / 2
+        self.assertAlmostEqual(rp.USB_CENTER_Z, slot_c, places=6)
+        self.assertAlmostEqual(rp.PCB_BOTTOM_Z, rp.USB_BOTTOM_Z + rp.USB_H, places=6)
+        self.assertAlmostEqual(rp.PCB_TOP_Z, rp.PCB_BOTTOM_Z + rp.BOARD_T, places=6)
+        self.assertAlmostEqual(rp.BOARD_CX, (rp.USB_SLOT_X[0] + rp.USB_SLOT_X[1]) / 2 + rp.BOARD_X_SHIFT)
+        self.assertAlmostEqual(rp.BOARD_Y0, rp.WALL_INNER_Y - rp.USB_INTO_WALL + rp.USB_OVERHANG)
+
+    def test_board_and_connector_volumes_are_empty(self):
+        cx = self.cx
+        for y in (rp.BOARD_Y0 + 0.5, (rp.BOARD_Y0 + rp.BOARD_Y1) / 2, rp.BOARD_Y1 - 0.5):
+            for x in (rp.BOARD_X0 + 0.2, cx, rp.BOARD_X1 - 0.2):
+                self.assertFalse(inside(self.shape, x, y, rp.PCB_BOTTOM_Z + 0.5), (x, y))
+        # USB-C shell volume.
+        for z in (rp.USB_BOTTOM_Z + 0.1, rp.USB_CENTER_Z, rp.PCB_BOTTOM_Z - 0.1):
+            self.assertFalse(inside(self.shape, cx, rp.BOARD_Y0 - 0.5, z))
+            self.assertFalse(inside(self.shape, cx - rp.USB_W / 2 + 0.1, rp.BOARD_Y0 + 2.0, z))
+
+    def test_cradle_supports_usb_c_shell(self):
+        cx = self.cx
+        y = rp.PLATE_REAR_Y + rp.CRADLE_L / 2
+        self.assertTrue(inside(self.shape, cx, y, rp.USB_BOTTOM_Z - 0.1))
+        self.assertTrue(inside(self.shape, cx, y, rp.PLATE_Z1 + 0.5))
+        self.assertFalse(inside(self.shape, cx, y, rp.USB_BOTTOM_Z + 0.1))
+        self.assertFalse(inside(self.shape, cx + rp.CRADLE_W / 2 + 0.3, y, rp.PLATE_Z1 + 0.5))
+
+    def test_corner_seats_support_far_corners(self):
+        y = rp.BOARD_Y1 - rp.SEAT_L / 2
+        for x in (rp.BOARD_X0 + 1.0, rp.BOARD_X1 - 1.0):
+            self.assertTrue(inside(self.shape, x, y, rp.PCB_BOTTOM_Z - 0.1))
+            self.assertFalse(inside(self.shape, x, y, rp.PCB_BOTTOM_Z + 0.1))
+        # Nothing under the pad rows between the seats.
+        self.assertFalse(inside(self.shape, self.cx, y, rp.PCB_BOTTOM_Z - 0.1))
+
+    def test_rails_and_end_stop(self):
+        for x in (rp.RAIL_X0 - 0.2, rp.RAIL_X1 + 0.2):
+            for z in (rp.PLATE_Z1 + 0.1, 0.0, rp.RAIL_TOP_Z - 0.1):
+                self.assertTrue(inside(self.shape, x, -20.0, z), (x, z))
+            self.assertFalse(inside(self.shape, x, -20.0, rp.RAIL_TOP_Z + 0.1))
+        y_stop = rp.BOARD_Y1 + rp.BOARD_CLEAR + rp.RAIL_T / 2
+        self.assertTrue(inside(self.shape, self.cx, y_stop, rp.RAIL_TOP_Z - 0.1))
+        self.assertFalse(inside(self.shape, self.cx, rp.BOARD_Y1 + 0.1, rp.PCB_TOP_Z))
+
+    def test_floor_window_under_the_board(self):
+        for z in (rp.PLATE_Z0 + 0.1, rp.PLATE_Z1 - 0.1):
+            self.assertFalse(inside(self.shape, self.cx, -20.0, z))
+            self.assertFalse(inside(self.shape, rp.BOARD_X0 + 1.0, -12.0, z))
+        # Plate survives outside the window.
+        self.assertTrue(inside(self.shape, rp.BOARD_X0 - 3.0, -20.0, rp.PLATE_Z1 - 0.1))
+        self.assertTrue(inside(self.shape, self.cx, rp.BOARD_Y1 + 3.0, rp.PLATE_Z1 - 0.1))
+
+    def test_zip_tie_slots_go_through_plate_and_rails(self):
+        for y0 in rp.ZIP_SLOT_Y0:
+            y = y0 + rp.ZIP_SLOT_L / 2
+            for x in (rp.BOARD_X0 - rp.ZIP_SLOT_W / 2, rp.BOARD_X1 + rp.ZIP_SLOT_W / 2):
+                for z in (rp.PLATE_Z0 + 0.1, 0.0, rp.RAIL_TOP_Z - 0.1):
+                    self.assertFalse(inside(self.shape, x, y, z), (x, y, z))
+            # Rail is solid just beyond the slot ends.
+            self.assertTrue(inside(self.shape, rp.RAIL_X0 - 0.2, y0 - 0.5, 0.0))
+            self.assertTrue(inside(self.shape, rp.RAIL_X0 - 0.2, y0 + rp.ZIP_SLOT_L + 0.5, 0.0))
+
+    def test_ring_b_cap_is_relieved_under_the_board(self):
+        bx, by = rp.RING_B
+        x = rp.BOARD_X1 - 0.3                     # inside the board footprint, inside the cap
+        self.assertTrue(inside(self.shape, x, by, rp.PCB_BOTTOM_Z - rp.CAP_RELIEF - 0.1))
+        self.assertFalse(inside(self.shape, x, by, rp.PCB_BOTTOM_Z - rp.CAP_RELIEF + 0.1))
+        # Full-height cap remains where the screw head sits.
+        self.assertTrue(inside(self.shape, bx + 3.0, by + 3.0, rp.CAP_TOP_Z - 0.1))
+
+
 if __name__ == '__main__':
     unittest.main()
