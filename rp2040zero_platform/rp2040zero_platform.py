@@ -50,6 +50,16 @@ POCKET_BORE_D = 10.4           # bore around the Ø10 ring
 POCKET_OD = 12.8               # pocket outer diameter
 CAP_TOP_Z = 2.0                # top of the screw cap (cap is Z 0..CAP_TOP_Z)
 SCREW_HOLE_D = 4.5             # M4 clearance
+CAP_SEAT_D = 9.2               # full disc kept under the screw head on every ring
+RING_A_TOP_Z = 0.0             # top face of case ring A (defines Z = 0)
+RING_B_TOP_Z = 0.25            # top face of case ring B (measured 0.25 above ring A)
+RING_A_KEEP_X = -3.8           # ring A boss removed where X < this (case wall at X -4.2..-5.1)
+RING_A_KEEP_X_LOW = 0.5        # below Z = 0, ring A boss removed where X < this (fillets fill X < 0)
+RING_A_BLOB_GAP = 0.1          # boss lifted this much off the fillet blob's top face (flush with ring A's top) on the X < RING_A_KEEP_X_LOW side
+RING_B_FREE_NORMAL_DEG = 105.0 # ring B boss kept on the side of its centre facing this direction
+RING_B_FREE_OFFSET = 0.5       # ... beyond a line this far from the centre (case free in 15..195 deg)
+RING_B_FLAT_X = 30.9           # case ring B has a flat face at this X (toward the board pocket) ...
+RING_B_FLAT_Y_TOP = -24.5      # ... from the rear wall up to this Y, below RING_B_TOP_Z
 
 # ---------------------------------------------------------------------------
 # RP2040-Zero, mounted components down, USB-C toward the rear wall
@@ -189,6 +199,7 @@ def make_plate():
 # Ring pockets
 # ---------------------------------------------------------------------------
 RING_CENTRES = (RING_A, RING_B)
+RING_TOP_Z = (RING_A_TOP_Z, RING_B_TOP_Z)   # parallel to RING_CENTRES
 
 
 def make_ring_pocket_outer(cx, cy):
@@ -196,11 +207,48 @@ def make_ring_pocket_outer(cx, cy):
     return cyl(cx, cy, POCKET_OD, PLATE_Z0, CAP_TOP_Z)
 
 
-def make_ring_cutters(cx, cy):
+def make_ring_keep(index):
+    """Region around ring `index` that the case leaves free for the boss."""
+    cx, cy = RING_CENTRES[index]
+    big = 100.0
+    if index == 0:
+        # Ring A: nothing left of the case wall; below Z = 0 nothing left of
+        # the fillets either.
+        wall = box(RING_A_KEEP_X, big, -big, big, -big, big)
+        seam = RING_A_TOP_Z + RING_A_BLOB_GAP
+        low = box(RING_A_KEEP_X_LOW, big, -big, big, -big, seam)
+        top = box(-big, big, -big, big, seam, big)
+        return wall.common(low.fuse(top))
+    # Ring B: the half-space beyond a line RING_B_FREE_OFFSET from the centre,
+    # on the side facing RING_B_FREE_NORMAL_DEG (a box with +Y normal, rotated).
+    half = box(-big, big, RING_B_FREE_OFFSET, big, -big, big)
+    half.rotate(Vector(0, 0, 0), Vector(0, 0, 1), RING_B_FREE_NORMAL_DEG - 90.0)
+    half.translate(Vector(cx, cy, 0))
+    return half
+
+
+def make_ring_boss(index):
+    """Boss limited to the free space around the case ring, plus the full
+    seat disc under the screw head."""
+    cx, cy = RING_CENTRES[index]
+    boss = make_ring_pocket_outer(cx, cy).common(make_ring_keep(index))
+    seat = cyl(cx, cy, CAP_SEAT_D, RING_TOP_Z[index], CAP_TOP_Z)
+    return boss.fuse(seat)
+
+
+def make_ring_cutters(index):
     """Bore for the case ring (open at the bottom) plus the M4 screw hole."""
-    bore = cyl(cx, cy, POCKET_BORE_D, PLATE_Z0 - 1.0, 0.0)
+    cx, cy = RING_CENTRES[index]
+    bore = cyl(cx, cy, POCKET_BORE_D, PLATE_Z0 - 1.0, RING_TOP_Z[index])
     hole = cyl(cx, cy, SCREW_HOLE_D, -1.0, CAP_TOP_Z + 1.0)
-    return bore.fuse(hole)
+    cutters = bore.fuse(hole)
+    if index == 1:
+        # Case ring B has a flat face toward the board pocket; keep the bore
+        # open along it as well.
+        cutters = cutters.fuse(box(RING_B_FLAT_X - 0.3, cx, PLATE_REAR_Y - 1.0,
+                                   RING_B_FLAT_Y_TOP + 0.3, PLATE_Z0 - 1.0,
+                                   RING_TOP_Z[index]))
+    return cutters
 
 
 # ---------------------------------------------------------------------------
@@ -288,15 +336,15 @@ def build():
     """Return the finished platform as a single solid."""
     shape = make_plate().cut(make_window())
     relief = make_cap_relief()
-    for cx, cy in RING_CENTRES:
-        shape = shape.fuse(make_ring_pocket_outer(cx, cy).cut(relief))
+    for i in range(len(RING_CENTRES)):
+        shape = shape.fuse(make_ring_boss(i).cut(relief))
     shape = shape.fuse(make_board_additions())
     shape = shape.fuse(make_jack_block()).cut(make_jack_cutters())
     shape = shape.cut(make_zip_slots())
     # Cut ring bores and screw holes last: anything fused over a ring must
     # stay open where the case ring sits.
-    for cx, cy in RING_CENTRES:
-        shape = shape.cut(make_ring_cutters(cx, cy))
+    for i in range(len(RING_CENTRES)):
+        shape = shape.cut(make_ring_cutters(i))
     # Ring B sits 3.5 mm from the rear wall (the case ring merges into the
     # wall), so trim everything, not just the plate, at the rear edge.
     keep = box(-100, 100, PLATE_REAR_Y, 100, -100, 100)

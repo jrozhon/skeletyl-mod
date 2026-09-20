@@ -1,3 +1,4 @@
+import math
 import unittest
 import os
 import tempfile
@@ -55,26 +56,65 @@ class RingPocketTest(unittest.TestCase):
         self.assertEqual(len(self.shape.Solids), 1)
 
     def test_bore_is_open_around_each_case_ring(self):
-        for cx, cy in rp.RING_CENTRES:
+        for (cx, cy), top in zip(rp.RING_CENTRES, rp.RING_TOP_Z):
             for r in (0.0, 4.9):                 # centre and just inside the Ø10 ring
-                for z in (-3.7, -2.0, -0.05):    # whole ring height
+                for z in (-3.7, -2.0, top - 0.05):   # whole ring height
                     self.assertFalse(inside(self.shape, cx + r, cy, z), (cx, cy, r, z))
             self.assertFalse(inside(self.shape, cx, cy - 4.9, -2.0))
 
-    def test_pocket_wall_and_cap_ring_exist(self):
-        for cx, cy in rp.RING_CENTRES:
-            self.assertTrue(inside(self.shape, cx + 5.8, cy, -2.0))   # wall (r 5.2..6.4)
-            self.assertTrue(inside(self.shape, cx, cy + 5.8, -2.0))
-            self.assertTrue(inside(self.shape, cx + 3.0, cy, 1.0))    # cap ring (r 2.25..6.4)
-            self.assertTrue(inside(self.shape, cx - 3.0, cy, 0.5))
-            self.assertFalse(inside(self.shape, cx + 3.0, cy, rp.CAP_TOP_Z + 0.05))
+    def test_boss_wall_exists_on_the_free_side(self):
+        ax, ay = rp.RING_A
+        self.assertTrue(inside(self.shape, ax + 5.8, ay, -2.0))          # 0 deg
+        self.assertTrue(inside(self.shape, ax + 0.7, ay + 5.8, -2.0))    # just past X >= 0.5
+        self.assertTrue(inside(self.shape, ax - 3.7, ay, 1.0))           # cap reaches X = -3.8
+        self.assertTrue(inside(self.shape, ax - 2.9, ay + 5.02, 1.0))    # 120 deg, r 5.8: boss kept
+        bx, by = rp.RING_B
+        self.assertTrue(inside(self.shape, bx - 5.8, by, -2.0))          # 180 deg
+        self.assertTrue(inside(self.shape, bx, by + 5.8, -2.0))          # 90 deg
+        self.assertTrue(inside(self.shape, bx, by + 5.8, 1.0))
+
+    def test_boss_removed_where_the_case_is(self):
+        ax, ay = rp.RING_A
+        self.assertFalse(inside(self.shape, ax - 5.8, ay, -2.0))         # case wall side
+        self.assertFalse(inside(self.shape, ax - 2.0, ay + 5.5, -2.0))   # fillet zone
+        self.assertFalse(inside(self.shape, ax + 0.3, ay + 5.8, -2.0))   # X < 0.5, below Z = 0
+        self.assertFalse(inside(self.shape, ax - 5.02, ay + 2.9, 1.0))   # 150 deg, r 5.8: boss cut at X = -3.8
+        self.assertFalse(inside(self.shape, ax - 5.8, ay, 1.0))
+        bx, by = rp.RING_B
+        self.assertFalse(inside(self.shape, bx + 5.8, by, -2.0))         # 0 deg: right wall
+        self.assertFalse(inside(self.shape, bx + 5.8, by, 1.0))
+        self.assertFalse(inside(self.shape, bx + 5.0, by - 2.9, -2.0))   # 330 deg: flare
+
+    def test_screw_seat_is_a_full_disc(self):
+        for (cx, cy), top in zip(rp.RING_CENTRES, rp.RING_TOP_Z):
+            for ang in range(0, 360, 45):
+                x = cx + 3.5 * math.cos(math.radians(ang))
+                y = cy + 3.5 * math.sin(math.radians(ang))
+                if y < rp.PLATE_REAR_Y:
+                    continue                      # trimmed at the rear edge
+                self.assertTrue(inside(self.shape, x, y, top + 0.1), (cx, cy, ang))
+                self.assertTrue(inside(self.shape, x, y, rp.CAP_TOP_Z - 0.1), (cx, cy, ang))
 
     def test_screw_hole_goes_through_cap(self):
-        for cx, cy in rp.RING_CENTRES:
-            for z in (0.05, 1.0, 1.95):
+        for (cx, cy), top in zip(rp.RING_CENTRES, rp.RING_TOP_Z):
+            for z in (top + 0.05, 1.0, 1.95):
                 self.assertFalse(inside(self.shape, cx, cy, z))
                 self.assertFalse(inside(self.shape, cx + 2.1, cy, z))
                 self.assertTrue(inside(self.shape, cx + 2.4, cy, z))
+
+    def test_bore_follows_ring_b_flat_face(self):
+        bx, by = rp.RING_B
+        self.assertFalse(inside(self.shape, rp.RING_B_FLAT_X - 0.1, -25.0, -2.0))  # along the flat
+        self.assertTrue(inside(self.shape, rp.RING_B_FLAT_X - 0.1, -23.5, -2.0))   # rail above it
+        self.assertFalse(inside(self.shape, bx + 4.0, by, rp.RING_B_TOP_Z - 0.05))  # bore to the top
+        self.assertTrue(inside(self.shape, bx + 4.0, by, rp.RING_B_TOP_Z + 0.05))   # seat above it
+
+    def test_ring_a_boss_clears_the_fillet_blob_top(self):
+        ax, ay = rp.RING_A
+        seam = rp.RING_A_TOP_Z + rp.RING_A_BLOB_GAP
+        self.assertFalse(inside(self.shape, ax - 2.0, ay + 5.5, seam - 0.05))   # gap over the blob
+        self.assertTrue(inside(self.shape, ax - 2.0, ay + 5.5, seam + 0.05))    # boss above it
+        self.assertTrue(inside(self.shape, ax + 4.0, ay, rp.RING_A_TOP_Z + 0.05))  # seat still on the ring
 
     def test_nothing_behind_rear_trim(self):
         # Ring B's boss would otherwise reach Y = -34.7, into the case wall.
@@ -155,7 +195,7 @@ class BoardPocketTest(unittest.TestCase):
 
     def test_ring_b_cap_is_relieved_under_the_board(self):
         bx, by = rp.RING_B
-        x = rp.BOARD_X1 - 0.3                     # inside the board footprint, inside the cap
+        x = bx - 4.3                              # inside the seat disc, inside the board footprint
         self.assertTrue(inside(self.shape, x, by, rp.PCB_BOTTOM_Z - rp.CAP_RELIEF - 0.1))
         self.assertFalse(inside(self.shape, x, by, rp.PCB_BOTTOM_Z - rp.CAP_RELIEF + 0.1))
         # Full-height cap remains where the screw head sits.
