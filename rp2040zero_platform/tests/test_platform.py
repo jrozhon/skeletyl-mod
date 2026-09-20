@@ -76,6 +76,10 @@ class RingPocketTest(unittest.TestCase):
                 self.assertFalse(inside(self.shape, cx + 2.1, cy, z))
                 self.assertTrue(inside(self.shape, cx + 2.4, cy, z))
 
+    def test_nothing_behind_rear_trim(self):
+        # Ring B's boss would otherwise reach Y = -34.7, into the case wall.
+        self.assertAlmostEqual(self.shape.BoundBox.YMin, rp.PLATE_REAR_Y, places=4)
+
 
 class BoardPocketTest(unittest.TestCase):
     @classmethod

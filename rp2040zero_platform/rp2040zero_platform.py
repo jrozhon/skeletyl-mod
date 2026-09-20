@@ -297,7 +297,10 @@ def build():
     # stay open where the case ring sits.
     for cx, cy in RING_CENTRES:
         shape = shape.cut(make_ring_cutters(cx, cy))
-    return shape.removeSplitter()
+    # Ring B sits 3.5 mm from the rear wall (the case ring merges into the
+    # wall), so trim everything, not just the plate, at the rear edge.
+    keep = box(-100, 100, PLATE_REAR_Y, 100, -100, 100)
+    return shape.common(keep).removeSplitter()
 
 
 # ---------------------------------------------------------------------------
