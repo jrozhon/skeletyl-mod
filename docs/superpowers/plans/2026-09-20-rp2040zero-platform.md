@@ -650,10 +650,11 @@ class BoardPocketTest(unittest.TestCase):
         self.assertFalse(inside(self.shape, self.cx, y, rp.PCB_BOTTOM_Z - 0.1))
 
     def test_rails_and_end_stop(self):
+        # Y = -15 lies between the two zip-tie slots (-21..-16 and -14..-9).
         for x in (rp.RAIL_X0 - 0.2, rp.RAIL_X1 + 0.2):
             for z in (rp.PLATE_Z1 + 0.1, 0.0, rp.RAIL_TOP_Z - 0.1):
-                self.assertTrue(inside(self.shape, x, -20.0, z), (x, z))
-            self.assertFalse(inside(self.shape, x, -20.0, rp.RAIL_TOP_Z + 0.1))
+                self.assertTrue(inside(self.shape, x, -15.0, z), (x, z))
+            self.assertFalse(inside(self.shape, x, -15.0, rp.RAIL_TOP_Z + 0.1))
         y_stop = rp.BOARD_Y1 + rp.BOARD_CLEAR + rp.RAIL_T / 2
         self.assertTrue(inside(self.shape, self.cx, y_stop, rp.RAIL_TOP_Z - 0.1))
         self.assertFalse(inside(self.shape, self.cx, rp.BOARD_Y1 + 0.1, rp.PCB_TOP_Z))
