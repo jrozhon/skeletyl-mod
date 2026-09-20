@@ -43,5 +43,37 @@ class PlateTest(unittest.TestCase):
         self.assertFalse(inside(self.plate, 21.0, 35.0, -3.0))
 
 
+class RingPocketTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.shape = rp.build()
+
+    def test_single_valid_solid(self):
+        self.assertTrue(self.shape.isValid())
+        self.assertEqual(len(self.shape.Solids), 1)
+
+    def test_bore_is_open_around_each_case_ring(self):
+        for cx, cy in rp.RING_CENTRES:
+            for r in (0.0, 4.9):                 # centre and just inside the Ø10 ring
+                for z in (-3.7, -2.0, -0.05):    # whole ring height
+                    self.assertFalse(inside(self.shape, cx + r, cy, z), (cx, cy, r, z))
+            self.assertFalse(inside(self.shape, cx, cy - 4.9, -2.0))
+
+    def test_pocket_wall_and_cap_ring_exist(self):
+        for cx, cy in rp.RING_CENTRES:
+            self.assertTrue(inside(self.shape, cx + 5.8, cy, -2.0))   # wall (r 5.2..6.4)
+            self.assertTrue(inside(self.shape, cx, cy + 5.8, -2.0))
+            self.assertTrue(inside(self.shape, cx + 3.0, cy, 1.0))    # cap ring (r 2.25..6.4)
+            self.assertTrue(inside(self.shape, cx - 3.0, cy, 0.5))
+            self.assertFalse(inside(self.shape, cx + 3.0, cy, rp.CAP_TOP_Z + 0.05))
+
+    def test_screw_hole_goes_through_cap(self):
+        for cx, cy in rp.RING_CENTRES:
+            for z in (0.05, 1.0, 1.95):
+                self.assertFalse(inside(self.shape, cx, cy, z))
+                self.assertFalse(inside(self.shape, cx + 2.1, cy, z))
+                self.assertTrue(inside(self.shape, cx + 2.4, cy, z))
+
+
 if __name__ == '__main__':
     unittest.main()

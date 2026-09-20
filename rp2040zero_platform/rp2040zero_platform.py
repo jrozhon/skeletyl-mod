@@ -162,8 +162,33 @@ def make_plate():
 
 
 # ---------------------------------------------------------------------------
+# Ring pockets
+# ---------------------------------------------------------------------------
+RING_CENTRES = (RING_A, RING_B)
+
+
+def make_ring_pocket_outer(cx, cy):
+    """Solid boss that slips over a case ring; bore and hole are cut later."""
+    return cyl(cx, cy, POCKET_OD, PLATE_Z0, CAP_TOP_Z)
+
+
+def make_ring_cutters(cx, cy):
+    """Bore for the case ring (open at the bottom) plus the M4 screw hole."""
+    bore = cyl(cx, cy, POCKET_BORE_D, PLATE_Z0 - 1.0, 0.0)
+    hole = cyl(cx, cy, SCREW_HOLE_D, -1.0, CAP_TOP_Z + 1.0)
+    return bore.fuse(hole)
+
+
+# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 def build():
     """Return the finished platform as a single solid."""
-    return make_plate()
+    shape = make_plate()
+    for cx, cy in RING_CENTRES:
+        shape = shape.fuse(make_ring_pocket_outer(cx, cy))
+    # Cut ring bores and screw holes last: anything fused over a ring must
+    # stay open where the case ring sits.
+    for cx, cy in RING_CENTRES:
+        shape = shape.cut(make_ring_cutters(cx, cy))
+    return shape.removeSplitter()
