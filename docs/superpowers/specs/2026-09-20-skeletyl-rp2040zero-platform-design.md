@@ -75,6 +75,9 @@ All numbers are defaults of named parameters in the script.
 - Outer Ø12.8 cylinder from Z −4 to +2, fused with the plate.
 - Cap: Z 0…2, Ø4.5 through hole for M4.
 - Screw: M4 × 6 or 8 button head into the case insert.
+- Ring B is only 3.5 mm from the rear wall and the case ring itself merges
+  into the wall, so its pocket is cut off by the same rear trim as the plate
+  (Y ≥ −31.3): the boss and bore are open toward the wall on that side.
 
 ### 3. RP2040-Zero pocket (components down)
 
@@ -128,9 +131,11 @@ All numbers are defaults of named parameters in the script.
 
 ### 5. Fusion order
 
-plate − window − zip-tie slots − trim; + ring outers − ring bores − cap
-holes; + rails + end-stop + cradle + seats; + jack block − jack pocket − leg
-slot. Single solid, checked with `Shape.isValid()` and `len(Solids) == 1`.
+plate − window; + ring outers (each minus the cap relief); + rails +
+end-stop + cradle + seats; + jack block − jack pocket − leg slots; − zip-tie
+slots; − ring bores − cap holes; finally ∩ (Y ≥ −31.3) so nothing — ring B's
+boss included — lies behind the rear trim. Single solid, checked with
+`Shape.isValid()` and `len(Solids) == 1`.
 
 ## Script
 
