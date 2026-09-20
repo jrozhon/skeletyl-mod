@@ -3,7 +3,9 @@
 Replaces the Splinktegrated PCB in a hand-wired Skeletyl. Holds a Waveshare
 RP2040-Zero **components down** (USB-C in the case's USB slot, BOOT/RESET
 reachable from below) and a PJ-320A TRRS jack in the case's jack hole. Bolts
-to the two existing M4 heat-set rings with M4 × 6–8 mm button-head screws.
+to the two existing M4 heat-set rings with M4 × 6–8 mm screws. Use a head
+no wider than Ø7 mm (DIN 912 socket head) — at ring B the rear wall is only
+3.5 mm from the screw axis.
 
 Design notes and measurements: `docs/superpowers/specs/2026-09-20-skeletyl-rp2040zero-platform-design.md`.
 
@@ -43,3 +45,12 @@ the slicer for the other half, exactly like the case.
 | `JACK_AXIS_X` | 5.0 | Sideways nudge for the jack |
 
 All other dimensions are in the parameter block at the top of the script.
+
+## Clearance check
+
+    ./refs/fetch.sh
+    python3 rp2040zero_platform/check_clearance.py
+
+Samples the case surface and reports any sample inside the platform (only
+bore/ring proximity is allowed) and writes `sec_*.png` cross-sections.
+Last run: 2026-09-20 — 13486 points inside, all within the ring bores; no collisions.
