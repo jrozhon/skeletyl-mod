@@ -1350,3 +1350,12 @@ git commit -m "Add clearance check against the Skeletyl V4 case STL
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
+
+---
+
+## Execution notes (rulings made while running this plan)
+
+- Task 2: bbox test expectations corrected to the real geometry (XMin −4.04, XMax 37.57, YMax 27.76); the plan's estimates ignored the −0.31° rotation.
+- Task 4: the rail test probed inside a zip-tie slot; probe moved to Y = −15 (between the slots). Spec slot positions kept.
+- Task 6: ring B's boss reached Y = −34.7 (into the case wall) — `build()` now intersects the whole part with Y ≥ `PLATE_REAR_Y`; `RingPocketTest.test_nothing_behind_rear_trim` pins it.
+- Task 7: the clearance check found the bare-cylinder ring pockets colliding with the case. The case rings are not free-standing: ring A hangs off a slanted wall at X ≈ −4.2…−5.1 with fillets filling the X < 0 side below Z = 0 (their top face flush with the ring top); ring B is a blob with a flat face at X = 30.9, top at Z = +0.25, free only in the 15°…195° sector, with the rear wall 3.5 mm from the screw axis. Task 3's ring-pocket code was replaced by: full Ø9.2 seat discs (`CAP_SEAT_D`), bosses kept only in the measured free regions (`make_ring_keep`: ring A X ≥ −3.8 and X ≥ 0.5 below Z = 0.1; ring B a half-space 0.5 mm past the centre toward 105°), per-ring tops (`RING_TOP_Z`), a flat-face cutter for ring B, and `RING_A_BLOB_GAP = 0.1` so the boss clears the blob's flush top face. Screw heads must be ≤ Ø7 (DIN 912). `check_clearance.py` is exactly the Task 7 code; final run: 13486 sampled case points inside the part, all ring-top/bore contact, 0 collisions, exit 0.
