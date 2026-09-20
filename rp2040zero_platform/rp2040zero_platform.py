@@ -122,6 +122,16 @@ BOARD_Y1 = BOARD_Y0 + BOARD_L                            # front edge
 RAIL_X0 = BOARD_X0 - BOARD_CLEAR             # inner face of the left rail
 RAIL_X1 = BOARD_X1 + BOARD_CLEAR             # inner face of the right rail
 
+# Jack placement derived from the case hole: the jack sits on a shelf
+# JACK_AXIS_H below the hole axis, body face JACK_FACE_GAP from the wall.
+JACK_SHELF_Z = JACK_HOLE_Z - JACK_AXIS_H
+JACK_BLOCK_Z0 = JACK_SHELF_Z - JACK_FLOOR_T
+JACK_WALL_TOP_Z = JACK_SHELF_Z + JACK_BODY_H
+JACK_X0 = JACK_AXIS_X - JACK_BODY_W / 2.0
+JACK_X1 = JACK_AXIS_X + JACK_BODY_W / 2.0
+JACK_Y0 = WALL_INNER_Y + JACK_FACE_GAP       # body front face (toward the wall)
+JACK_Y1 = JACK_Y0 + JACK_BODY_L              # body rear face
+
 # ---------------------------------------------------------------------------
 # Primitives
 # ---------------------------------------------------------------------------
@@ -247,6 +257,31 @@ def make_cap_relief():
 
 
 # ---------------------------------------------------------------------------
+# PJ-320A jack pocket
+# ---------------------------------------------------------------------------
+def make_jack_block():
+    """Solid block for the jack: shelf, two side walls and the end stop."""
+    x0 = JACK_X0 - JACK_CLEAR_SIDE - JACK_WALL_T
+    x1 = JACK_X1 + JACK_CLEAR_SIDE + JACK_WALL_T
+    y1 = JACK_Y1 + JACK_CLEAR_LEN + JACK_WALL_T
+    return box(x0, x1, PLATE_REAR_Y, y1, JACK_BLOCK_Z0, JACK_WALL_TOP_Z)
+
+
+def make_jack_cutters():
+    """Body cavity (open toward the wall) and one leg slot on each side."""
+    cavity = box(JACK_X0 - JACK_CLEAR_SIDE, JACK_X1 + JACK_CLEAR_SIDE,
+                 PLATE_REAR_Y - 1.0, JACK_Y1 + JACK_CLEAR_LEN,
+                 JACK_SHELF_Z, JACK_WALL_TOP_Z + 1.0)
+    y0 = JACK_Y0 + JACK_LEG_SLOT_START
+    slots = None
+    for xc in (JACK_X0 + JACK_LEG_INSET, JACK_X1 - JACK_LEG_INSET):
+        slot = box(xc - JACK_LEG_SLOT_W / 2, xc + JACK_LEG_SLOT_W / 2,
+                   y0, y0 + JACK_LEG_SLOT_L, JACK_BLOCK_Z0 - 1.0, JACK_SHELF_Z + 0.5)
+        slots = slot if slots is None else slots.fuse(slot)
+    return cavity.fuse(slots)
+
+
+# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 def build():
@@ -256,6 +291,7 @@ def build():
     for cx, cy in RING_CENTRES:
         shape = shape.fuse(make_ring_pocket_outer(cx, cy).cut(relief))
     shape = shape.fuse(make_board_additions())
+    shape = shape.fuse(make_jack_block()).cut(make_jack_cutters())
     shape = shape.cut(make_zip_slots())
     # Cut ring bores and screw holes last: anything fused over a ring must
     # stay open where the case ring sits.

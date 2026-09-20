@@ -156,5 +156,47 @@ class BoardPocketTest(unittest.TestCase):
         self.assertTrue(inside(self.shape, bx + 3.0, by + 3.0, rp.CAP_TOP_Z - 0.1))
 
 
+class JackPocketTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.shape = rp.build()
+
+    def test_single_valid_solid_and_floor_limit(self):
+        self.assertTrue(self.shape.isValid())
+        self.assertEqual(len(self.shape.Solids), 1)
+        self.assertAlmostEqual(self.shape.BoundBox.ZMin, rp.JACK_BLOCK_Z0, places=4)
+        self.assertGreaterEqual(self.shape.BoundBox.ZMin, -5.25)
+
+    def test_barrel_axis_matches_case_hole(self):
+        self.assertAlmostEqual(rp.JACK_SHELF_Z + rp.JACK_AXIS_H, rp.JACK_HOLE_Z, places=6)
+        self.assertAlmostEqual((rp.JACK_X0 + rp.JACK_X1) / 2, rp.JACK_AXIS_X, places=6)
+
+    def test_body_volume_is_empty_and_open_toward_wall(self):
+        ym = (rp.JACK_Y0 + rp.JACK_Y1) / 2
+        for x in (rp.JACK_X0 + 0.1, rp.JACK_AXIS_X, rp.JACK_X1 - 0.1):
+            for z in (rp.JACK_SHELF_Z + 0.1, rp.JACK_HOLE_Z, rp.JACK_WALL_TOP_Z - 0.1):
+                self.assertFalse(inside(self.shape, x, ym, z), (x, z))
+        # Nothing between the body front face and the plate's rear edge.
+        self.assertFalse(inside(self.shape, rp.JACK_AXIS_X, rp.PLATE_REAR_Y + 0.1, rp.JACK_HOLE_Z))
+
+    def test_shelf_walls_and_end_stop(self):
+        ym = (rp.JACK_Y0 + rp.JACK_Y1) / 2
+        self.assertTrue(inside(self.shape, rp.JACK_AXIS_X, ym, rp.JACK_SHELF_Z - 0.5))
+        self.assertFalse(inside(self.shape, rp.JACK_AXIS_X, ym, rp.JACK_BLOCK_Z0 - 0.1))
+        for x in (rp.JACK_X0 - rp.JACK_CLEAR_SIDE - 0.5, rp.JACK_X1 + rp.JACK_CLEAR_SIDE + 0.5):
+            self.assertTrue(inside(self.shape, x, ym, rp.JACK_WALL_TOP_Z - 0.1), x)
+            self.assertFalse(inside(self.shape, x, ym, rp.JACK_WALL_TOP_Z + 0.1), x)
+        y_stop = rp.JACK_Y1 + rp.JACK_CLEAR_LEN + rp.JACK_WALL_T / 2
+        self.assertTrue(inside(self.shape, rp.JACK_AXIS_X, y_stop, rp.JACK_WALL_TOP_Z - 0.1))
+
+    def test_leg_slots_on_both_sides(self):
+        y = rp.JACK_Y0 + rp.JACK_LEG_SLOT_START + rp.JACK_LEG_SLOT_L / 2
+        for x in (rp.JACK_X0 + rp.JACK_LEG_INSET, rp.JACK_X1 - rp.JACK_LEG_INSET):
+            for z in (rp.JACK_BLOCK_Z0 + 0.1, rp.JACK_SHELF_Z - 0.1):
+                self.assertFalse(inside(self.shape, x, y, z), (x, z))
+        # Shelf centre between the slots is solid.
+        self.assertTrue(inside(self.shape, rp.JACK_AXIS_X, y, rp.JACK_SHELF_Z - 0.5))
+
+
 if __name__ == '__main__':
     unittest.main()
