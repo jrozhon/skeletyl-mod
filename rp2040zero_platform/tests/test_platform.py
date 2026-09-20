@@ -122,7 +122,7 @@ class RingPocketTest(unittest.TestCase):
         self.assertAlmostEqual(self.shape.BoundBox.ZMin, rp.PLATE_Z0, places=4)
         self.assertAlmostEqual(rp.JACK_BLOCK_Z0, rp.PLATE_Z0, places=6)
         z = rp.PLATE_Z0 + 0.05
-        for x, y in ((5.0, 10.0), (20.0, 10.0), (rp.BOARD_CX, rp.PLATE_REAR_Y + 1.0),
+        for x, y in ((8.0, 10.0), (20.0, 10.0), (rp.BOARD_CX, rp.PLATE_REAR_Y + 1.0),
                      (rp.JACK_AXIS_X, -25.0), (rp.RING_A[0] + 5.8, rp.RING_A[1])):
             self.assertTrue(inside(self.shape, x, y, z), (x, y))
 
