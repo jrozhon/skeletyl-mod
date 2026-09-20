@@ -1,4 +1,6 @@
 import unittest
+import os
+import tempfile
 
 from rp2040zero_platform import rp2040zero_platform as rp
 
@@ -196,6 +198,17 @@ class JackPocketTest(unittest.TestCase):
                 self.assertFalse(inside(self.shape, x, y, z), (x, z))
         # Shelf centre between the slots is solid.
         self.assertTrue(inside(self.shape, rp.JACK_AXIS_X, y, rp.JACK_SHELF_Z - 0.5))
+
+
+class ExportTest(unittest.TestCase):
+    def test_export_writes_three_files(self):
+        shape = rp.build()
+        with tempfile.TemporaryDirectory() as d:
+            paths = rp.export(shape, d)
+            self.assertEqual(set(paths), {'fcstd', 'step', 'stl'})
+            for p in paths.values():
+                self.assertTrue(os.path.exists(p), p)
+                self.assertGreater(os.path.getsize(p), 1000, p)
 
 
 if __name__ == '__main__':

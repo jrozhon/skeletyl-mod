@@ -298,3 +298,54 @@ def build():
     for cx, cy in RING_CENTRES:
         shape = shape.cut(make_ring_cutters(cx, cy))
     return shape.removeSplitter()
+
+
+# ---------------------------------------------------------------------------
+# Export / entry points
+# ---------------------------------------------------------------------------
+NAME = "rp2040zero_platform"
+
+
+def export(shape, out_dir):
+    """Write FCStd, STEP and STL for `shape` into out_dir; return the paths."""
+    import Mesh
+    import MeshPart
+
+    os.makedirs(out_dir, exist_ok=True)
+    paths = {
+        'fcstd': os.path.join(out_dir, NAME + ".FCStd"),
+        'step': os.path.join(out_dir, NAME + ".step"),
+        'stl': os.path.join(out_dir, NAME + ".stl"),
+    }
+    doc = FreeCAD.newDocument(NAME)
+    obj = doc.addObject("Part::Feature", "Platform")
+    obj.Shape = shape
+    doc.recompute()
+    doc.saveAs(paths['fcstd'])
+    shape.exportStep(paths['step'])
+    mesh = MeshPart.meshFromShape(Shape=shape, LinearDeflection=0.02, AngularDeflection=0.1)
+    mesh.write(paths['stl'])
+    FreeCAD.closeDocument(doc.Name)
+    return paths
+
+
+def main():
+    shape = build()
+    print("valid:", shape.isValid(), "solids:", len(shape.Solids),
+          "volume mm^3: %.1f" % shape.Volume)
+    bb = shape.BoundBox
+    print("bbox X %.2f..%.2f  Y %.2f..%.2f  Z %.2f..%.2f"
+          % (bb.XMin, bb.XMax, bb.YMin, bb.YMax, bb.ZMin, bb.ZMax))
+    if FreeCAD.GuiUp:
+        doc = FreeCAD.ActiveDocument or FreeCAD.newDocument(NAME)
+        obj = doc.addObject("Part::Feature", "Platform")
+        obj.Shape = shape
+        doc.recompute()
+    else:
+        out_dir = os.path.dirname(os.path.abspath(__file__))
+        for kind, path in export(shape, out_dir).items():
+            print("wrote", kind, path)
+
+
+if __name__ == "__main__":
+    main()
