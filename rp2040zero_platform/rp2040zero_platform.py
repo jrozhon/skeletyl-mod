@@ -39,7 +39,6 @@ USB_SLOT_Z = (-3.06, 4.0)      # case USB slot extents
 # ---------------------------------------------------------------------------
 # Base plate
 # ---------------------------------------------------------------------------
-PLATE_Z0 = -4.0                # plate bottom
 PLATE_Z1 = -2.0                # plate top
 PLATE_REAR_Y = -31.3           # outline trimmed here (0.5 mm from the wall)
 
@@ -50,16 +49,16 @@ POCKET_BORE_D = 10.4           # bore around the Ø10 ring
 POCKET_OD = 12.8               # pocket outer diameter
 CAP_TOP_Z = 2.0                # top of the screw cap (cap is Z 0..CAP_TOP_Z)
 SCREW_HOLE_D = 4.5             # M4 clearance
+HEAD_D = 7.0                   # largest screw head that fits (DIN 912 socket head); clearance above the caps is tested
 CAP_SEAT_D = 9.2               # full disc kept under the screw head on every ring
 RING_A_TOP_Z = 0.0             # top face of case ring A (defines Z = 0)
 RING_B_TOP_Z = 0.25            # top face of case ring B (measured 0.25 above ring A)
-RING_A_KEEP_X = -3.8           # ring A boss removed where X < this (case wall at X -4.2..-5.1)
-RING_A_KEEP_X_LOW = 0.5        # below Z = 0, ring A boss removed where X < this (fillets fill X < 0)
-RING_A_BLOB_GAP = 0.1          # boss lifted this much off the fillet blob's top face (flush with ring A's top) on the X < RING_A_KEEP_X_LOW side
+RING_A_KEEP_X = 0.5            # ring A boss kept only where X >= this: the case wall and its fillets occupy the X < 0 side
 RING_B_FREE_NORMAL_DEG = 105.0 # ring B boss kept on the side of its centre facing this direction
 RING_B_FREE_OFFSET = 0.5       # ... beyond a line this far from the centre (case free in 15..195 deg)
 RING_B_FLAT_X = 30.9           # case ring B has a flat face at this X (toward the board pocket) ...
 RING_B_FLAT_Y_TOP = -24.5      # ... from the rear wall up to this Y, below RING_B_TOP_Z
+RING_B_FLAT_CLEAR = 0.3        # clearance to ring B's flat face
 
 # ---------------------------------------------------------------------------
 # RP2040-Zero, mounted components down, USB-C toward the rear wall
@@ -76,11 +75,12 @@ BOARD_X_SHIFT = 0.0            # nudge the board sideways relative to the slot
 BOARD_CLEAR = 0.4              # side clearance PCB edge -> rail
 RAIL_T = 1.5                   # rail / end-stop thickness
 RAIL_TOP_Z = 4.5               # rails and end-stop top
+RAIL_R_GAP = 1.0               # right rail starts this far in front of ring B's flat face (screw head, printability)
 CRADLE_W = 6.0                 # block under the USB-C shell (X)
 CRADLE_L = 4.0                 # block under the USB-C shell (Y, from rear edge)
 SEAT_W = 3.0                   # corner seats under the far PCB corners (X)
 SEAT_L = 1.0                   # corner seats (Y)
-WINDOW_INSET_X = 0.45          # floor window inset from the PCB side edges
+WINDOW_INSET_X = 1.5           # floor window inset from the PCB side edges (leaves a 1.5 mm strip beside each zip-tie slot)
 WINDOW_REAR_GAP = 2.0          # floor window starts this far from the PCB rear edge
 WINDOW_FRONT_GAP = 1.5         # floor window ends this far from the PCB front edge
 CAP_RELIEF = 0.6               # ring cap lowered to PCB underside minus this, under the board
@@ -98,7 +98,7 @@ JACK_AXIS_H = 2.5              # barrel axis above the mounting face
 JACK_CLEAR_SIDE = 0.2          # pocket clearance per side
 JACK_CLEAR_LEN = 0.3           # pocket clearance in length
 JACK_WALL_T = 1.5              # pocket wall thickness
-JACK_FLOOR_T = 1.5             # shelf thickness under the jack
+JACK_FLOOR_T = 1.0             # shelf thickness under the jack (also sets the plate thickness)
 JACK_FACE_GAP = 0.2            # body front face to wall inner face
 JACK_LEG_INSET = 0.8           # leg row inboard of the body side face
 JACK_LEG_SLOT_W = 1.6          # leg slot width (X), one on each side
@@ -131,11 +131,13 @@ BOARD_Y0 = WALL_INNER_Y - USB_INTO_WALL + USB_OVERHANG   # rear (USB) edge
 BOARD_Y1 = BOARD_Y0 + BOARD_L                            # front edge
 RAIL_X0 = BOARD_X0 - BOARD_CLEAR             # inner face of the left rail
 RAIL_X1 = BOARD_X1 + BOARD_CLEAR             # inner face of the right rail
+RAIL_R_Y0 = RING_B_FLAT_Y_TOP + RAIL_R_GAP   # right rail rear end
 
 # Jack placement derived from the case hole: the jack sits on a shelf
 # JACK_AXIS_H below the hole axis, body face JACK_FACE_GAP from the wall.
 JACK_SHELF_Z = JACK_HOLE_Z - JACK_AXIS_H
 JACK_BLOCK_Z0 = JACK_SHELF_Z - JACK_FLOOR_T
+PLATE_Z0 = JACK_BLOCK_Z0                     # plate bottom = jack shelf bottom: the whole underside lies flat on the bed
 JACK_WALL_TOP_Z = JACK_SHELF_Z + JACK_BODY_H
 JACK_X0 = JACK_AXIS_X - JACK_BODY_W / 2.0
 JACK_X1 = JACK_AXIS_X + JACK_BODY_W / 2.0
@@ -212,13 +214,8 @@ def make_ring_keep(index):
     cx, cy = RING_CENTRES[index]
     big = 100.0
     if index == 0:
-        # Ring A: nothing left of the case wall; below Z = 0 nothing left of
-        # the fillets either.
-        wall = box(RING_A_KEEP_X, big, -big, big, -big, big)
-        seam = RING_A_TOP_Z + RING_A_BLOB_GAP
-        low = box(RING_A_KEEP_X_LOW, big, -big, big, -big, seam)
-        top = box(-big, big, -big, big, seam, big)
-        return wall.common(low.fuse(top))
+        # Ring A: the case wall and its fillets fill the X < 0 side.
+        return box(RING_A_KEEP_X, big, -big, big, -big, big)
     # Ring B: the half-space beyond a line RING_B_FREE_OFFSET from the centre,
     # on the side facing RING_B_FREE_NORMAL_DEG (a box with +Y normal, rotated).
     half = box(-big, big, RING_B_FREE_OFFSET, big, -big, big)
@@ -245,8 +242,8 @@ def make_ring_cutters(index):
     if index == 1:
         # Case ring B has a flat face toward the board pocket; keep the bore
         # open along it as well.
-        cutters = cutters.fuse(box(RING_B_FLAT_X - 0.3, cx, PLATE_REAR_Y - 1.0,
-                                   RING_B_FLAT_Y_TOP + 0.3, PLATE_Z0 - 1.0,
+        cutters = cutters.fuse(box(RING_B_FLAT_X - RING_B_FLAT_CLEAR, cx, PLATE_REAR_Y - 1.0,
+                                   RING_B_FLAT_Y_TOP + RING_B_FLAT_CLEAR, PLATE_Z0 - 1.0,
                                    RING_TOP_Z[index]))
     return cutters
 
@@ -260,7 +257,7 @@ def make_board_additions():
     stop_y1 = stop_y0 + RAIL_T
     parts = [
         box(RAIL_X0 - RAIL_T, RAIL_X0, PLATE_REAR_Y, stop_y1, PLATE_Z0, RAIL_TOP_Z),
-        box(RAIL_X1, RAIL_X1 + RAIL_T, PLATE_REAR_Y, stop_y1, PLATE_Z0, RAIL_TOP_Z),
+        box(RAIL_X1, RAIL_X1 + RAIL_T, RAIL_R_Y0, stop_y1, PLATE_Z0, RAIL_TOP_Z),
         box(RAIL_X0 - RAIL_T, RAIL_X1 + RAIL_T, stop_y0, stop_y1, PLATE_Z0, RAIL_TOP_Z),
         # Cradle: the USB-C shell rests on this and sets the connector height.
         box(BOARD_CX - CRADLE_W / 2, BOARD_CX + CRADLE_W / 2,
@@ -291,11 +288,6 @@ def make_zip_slots():
                        PLATE_Z0 - 1.0, RAIL_TOP_Z + 1.0)
             shape = slot if shape is None else shape.fuse(slot)
     return shape
-
-
-def make_board_cutters():
-    """Window + zip-tie slots (convenience; build() applies them separately)."""
-    return make_window().fuse(make_zip_slots())
 
 
 def make_cap_relief():
@@ -359,7 +351,6 @@ NAME = "rp2040zero_platform"
 
 def export(shape, out_dir):
     """Write FCStd, STEP and STL for `shape` into out_dir; return the paths."""
-    import Mesh
     import MeshPart
 
     os.makedirs(out_dir, exist_ok=True)

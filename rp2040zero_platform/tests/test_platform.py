@@ -67,7 +67,6 @@ class RingPocketTest(unittest.TestCase):
         self.assertTrue(inside(self.shape, ax + 5.8, ay, -2.0))          # 0 deg
         self.assertTrue(inside(self.shape, ax + 0.7, ay + 5.8, -2.0))    # just past X >= 0.5
         self.assertTrue(inside(self.shape, ax - 3.7, ay, 1.0))           # cap reaches X = -3.8
-        self.assertTrue(inside(self.shape, ax - 2.9, ay + 5.02, 1.0))    # 120 deg, r 5.8: boss kept
         bx, by = rp.RING_B
         self.assertTrue(inside(self.shape, bx - 5.8, by, -2.0))          # 180 deg
         self.assertTrue(inside(self.shape, bx, by + 5.8, -2.0))          # 90 deg
@@ -78,7 +77,8 @@ class RingPocketTest(unittest.TestCase):
         self.assertFalse(inside(self.shape, ax - 5.8, ay, -2.0))         # case wall side
         self.assertFalse(inside(self.shape, ax - 2.0, ay + 5.5, -2.0))   # fillet zone
         self.assertFalse(inside(self.shape, ax + 0.3, ay + 5.8, -2.0))   # X < 0.5, below Z = 0
-        self.assertFalse(inside(self.shape, ax - 5.02, ay + 2.9, 1.0))   # 150 deg, r 5.8: boss cut at X = -3.8
+        self.assertFalse(inside(self.shape, ax - 2.9, ay + 5.02, 1.0))   # 120 deg, r 5.8: no boss on the X < 0.5 side
+        self.assertFalse(inside(self.shape, ax + 0.3, ay + 5.8, 1.0))
         self.assertFalse(inside(self.shape, ax - 5.8, ay, 1.0))
         bx, by = rp.RING_B
         self.assertFalse(inside(self.shape, bx + 5.8, by, -2.0))         # 0 deg: right wall
@@ -109,12 +109,22 @@ class RingPocketTest(unittest.TestCase):
         self.assertFalse(inside(self.shape, bx + 4.0, by, rp.RING_B_TOP_Z - 0.05))  # bore to the top
         self.assertTrue(inside(self.shape, bx + 4.0, by, rp.RING_B_TOP_Z + 0.05))   # seat above it
 
-    def test_ring_a_boss_clears_the_fillet_blob_top(self):
-        ax, ay = rp.RING_A
-        seam = rp.RING_A_TOP_Z + rp.RING_A_BLOB_GAP
-        self.assertFalse(inside(self.shape, ax - 2.0, ay + 5.5, seam - 0.05))   # gap over the blob
-        self.assertTrue(inside(self.shape, ax - 2.0, ay + 5.5, seam + 0.05))    # boss above it
-        self.assertTrue(inside(self.shape, ax + 4.0, ay, rp.RING_A_TOP_Z + 0.05))  # seat still on the ring
+    def test_screw_head_clears_everything_above_the_caps(self):
+        for cx, cy in rp.RING_CENTRES:
+            for ang in range(0, 360, 10):
+                for r in (2.5, rp.HEAD_D / 2 + 0.2):
+                    x = cx + r * math.cos(math.radians(ang))
+                    y = cy + r * math.sin(math.radians(ang))
+                    for z in (rp.CAP_TOP_Z + 0.1, 3.0, 4.4):
+                        self.assertFalse(inside(self.shape, x, y, z), (cx, cy, ang, r, z))
+
+    def test_underside_lies_flat_on_the_bed(self):
+        self.assertAlmostEqual(self.shape.BoundBox.ZMin, rp.PLATE_Z0, places=4)
+        self.assertAlmostEqual(rp.JACK_BLOCK_Z0, rp.PLATE_Z0, places=6)
+        z = rp.PLATE_Z0 + 0.05
+        for x, y in ((5.0, 10.0), (20.0, 10.0), (rp.BOARD_CX, rp.PLATE_REAR_Y + 1.0),
+                     (rp.JACK_AXIS_X, -25.0), (rp.RING_A[0] + 5.8, rp.RING_A[1])):
+            self.assertTrue(inside(self.shape, x, y, z), (x, y))
 
     def test_nothing_behind_rear_trim(self):
         # Ring B's boss would otherwise reach Y = -34.7, into the case wall.
@@ -178,10 +188,21 @@ class BoardPocketTest(unittest.TestCase):
     def test_floor_window_under_the_board(self):
         for z in (rp.PLATE_Z0 + 0.1, rp.PLATE_Z1 - 0.1):
             self.assertFalse(inside(self.shape, self.cx, -20.0, z))
-            self.assertFalse(inside(self.shape, rp.BOARD_X0 + 1.0, -12.0, z))
+            self.assertFalse(inside(self.shape, rp.BOARD_X0 + 2.0, -12.0, z))
         # Plate survives outside the window.
         self.assertTrue(inside(self.shape, rp.BOARD_X0 - 3.0, -20.0, rp.PLATE_Z1 - 0.1))
         self.assertTrue(inside(self.shape, self.cx, rp.BOARD_Y1 + 3.0, rp.PLATE_Z1 - 0.1))
+
+    def test_right_rail_starts_in_front_of_ring_b(self):
+        x = rp.RAIL_X1 + 0.2
+        self.assertFalse(inside(self.shape, x, rp.RAIL_R_Y0 - 1.0, 3.0))   # screw-head zone: no rail
+        self.assertTrue(inside(self.shape, x, rp.RAIL_R_Y0 + 1.0, 3.0))
+        self.assertTrue(inside(self.shape, rp.RAIL_X0 - 0.2, rp.RAIL_R_Y0 - 1.0, 3.0))  # left rail is full length
+
+    def test_zip_tie_strip_is_solid(self):
+        for x in (rp.BOARD_X0 + 0.75, rp.BOARD_X1 - 0.75):
+            for y0 in rp.ZIP_SLOT_Y0:
+                self.assertTrue(inside(self.shape, x, y0 + rp.ZIP_SLOT_L / 2, rp.PLATE_Z1 - 0.1), (x, y0))
 
     def test_zip_tie_slots_go_through_plate_and_rails(self):
         for y0 in rp.ZIP_SLOT_Y0:
