@@ -106,3 +106,64 @@ def kicad_to_local(p):
     x, y = p[0] - H1[0], p[1] - H1[1]
     c, s = math.cos(_DELTA), math.sin(_DELTA)
     return (x * c - y * s, x * s + y * c)
+
+
+# ---------------------------------------------------------------------------
+# Primitives
+# ---------------------------------------------------------------------------
+def box(x0, x1, y0, y1, z0, z1):
+    """Axis-aligned box given by its extents (any order per axis)."""
+    x0, x1 = sorted((x0, x1))
+    y0, y1 = sorted((y0, y1))
+    z0, z1 = sorted((z0, z1))
+    return Part.makeBox(x1 - x0, y1 - y0, z1 - z0, Vector(x0, y0, z0))
+
+
+def cyl(cx, cy, d, z0, z1):
+    """Vertical cylinder of diameter d from z0 to z1 centred on (cx, cy)."""
+    z0, z1 = sorted((z0, z1))
+    return Part.makeCylinder(d / 2.0, z1 - z0, Vector(cx, cy, z0))
+
+
+# ---------------------------------------------------------------------------
+# Base plate
+# ---------------------------------------------------------------------------
+def make_outline_face():
+    """Splinktegrated head + neck outline as a planar face at Z = 0."""
+    def v(p):
+        x, y = kicad_to_local(p)
+        return Vector(x, y, 0.0)
+
+    edges = []
+    prev_end = None
+    for kind, start, mid, end in OUTLINE_KICAD:
+        a = prev_end if prev_end is not None else v(start)  # snap tiny gaps
+        b = v(end)
+        if kind == 'line':
+            edges.append(Part.LineSegment(a, b).toShape())
+        else:
+            edges.append(Part.Arc(a, v(mid), b).toShape())
+        prev_end = b
+    # Close along the daughterboard snap-off line.
+    edges.append(Part.LineSegment(prev_end, edges[0].Vertexes[0].Point).toShape())
+    wire = Part.Wire(edges)
+    if not wire.isClosed():
+        raise RuntimeError("outline wire is not closed")
+    return Part.Face(wire)
+
+
+def make_plate():
+    """Outline extruded to the plate thickness and trimmed at the rear."""
+    face = make_outline_face()
+    face.translate(Vector(0, 0, PLATE_Z0))
+    plate = face.extrude(Vector(0, 0, PLATE_Z1 - PLATE_Z0))
+    keep = box(-100, 100, PLATE_REAR_Y, 100, PLATE_Z0 - 1, PLATE_Z1 + 1)
+    return plate.common(keep)
+
+
+# ---------------------------------------------------------------------------
+# Assembly
+# ---------------------------------------------------------------------------
+def build():
+    """Return the finished platform as a single solid."""
+    return make_plate()
