@@ -9,12 +9,12 @@ Or in FreeCAD:  open as a macro; the part is added to the active document.
 """
 import math
 import os
+import sys
 
 try:  # imported as a package member (tests, check_clearance)
     from . import freecad_path  # noqa: F401  (adds FreeCAD's lib dir to sys.path)
     from .outline_kicad import H1, H2, OUTLINE_KICAD
 except ImportError:  # run as a script / macro: import siblings by path
-    import sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import freecad_path  # noqa: F401
     from outline_kicad import H1, H2, OUTLINE_KICAD
@@ -389,5 +389,17 @@ def main():
             print("wrote", kind, path)
 
 
-if __name__ == "__main__":
+def _run_as_script():
+    """True when executed directly (`python3 file.py`, GUI macro) or via
+    `freecadcmd file.py`, which runs the file with __name__ set to its
+    basename instead of "__main__"."""
+    if __name__ == "__main__":
+        return True
+    argv = sys.argv
+    return (len(argv) > 1
+            and os.path.basename(argv[0]).lower().startswith("freecad")
+            and os.path.abspath(argv[-1]) == os.path.abspath(__file__))
+
+
+if _run_as_script():
     main()

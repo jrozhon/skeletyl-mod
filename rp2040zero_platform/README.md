@@ -11,7 +11,8 @@ Design notes and measurements: `docs/superpowers/specs/2026-09-20-skeletyl-rp204
 
 ## Build
 
-    freecadcmd rp2040zero_platform.py        # writes .FCStd / .step / .stl here
+    freecadcmd rp2040zero_platform.py          # writes .FCStd / .step / .stl next to the script
+    python3 rp2040zero_platform.py             # same, using the system python + FreeCAD's modules
     python3 -m unittest discover -s tests -t .. -v   # from this directory
 
 Or open `rp2040zero_platform.py` in FreeCAD as a macro; a `Platform` object is
