@@ -1,3 +1,8 @@
 *.FCBak
 __pycache__/
 .superpowers/
+refs/
+*.stl
+*.step
+*.FCStd
+*.png
