@@ -93,7 +93,7 @@ All numbers are defaults of named parameters in the script.
     stop ~1.6 mm short of the long-edge ends and ~3.9 mm short of the far
     corners, so the seats rest on bare PCB.)
 - Guides: side rails 1.5 thick, 0.4 clearance to the board (inner faces at
-  X 11.65 and 30.45), from Y −31.3 to −6.1, Z −2…4.5. Front end-stop 1.5
+  X 11.65 and 30.45), from Y −31.3 to −6.1, Z −4…4.5. Front end-stop 1.5
   thick at Y −7.6…−6.1 between the rails, same height. Rails are interrupted
   where zip-tie slots pass.
 - Floor window: the plate is cut away under the board, X 12.5…29.6,
@@ -102,8 +102,13 @@ All numbers are defaults of named parameters in the script.
   to the USB-C) and component clearance.
 - Zip-tie slots: 2 (X) × 5 (Y) through the plate and the rails, directly
   outside the board edges (X 10.05…12.05 and 30.05…32.05), one pair at
-  Y −26…−21 and one at Y −16…−11. A 2.5 mm tie loops under the plate and
-  over the board.
+  Y −21…−16 and one at Y −14…−9 (both clear of ring B's pocket, whose
+  outer wall reaches Y ≈ −22 at those X). A 2.5 mm tie loops under the
+  plate and over the board.
+- Ring-cap relief: within the board pocket footprint (between the rail
+  inner faces) the ring caps are lowered to Z = PCB underside − 0.6 ≈ 1.47,
+  so ring B's cap cannot touch the board edge; the M4 head (Ø7.5) sits
+  entirely outside that footprint.
 
 ### 4. PJ-320A pocket
 
@@ -116,10 +121,10 @@ All numbers are defaults of named parameters in the script.
   hole. Pocket length 12.3 → end-stop inner face at Y = −19.3.
 - Walls 1.5 thick on the two long sides and the front end, Z −5.25…+1.25
   (full body height). Open toward the wall.
-- Leg slot: 1.6 (X) × 10.0 (Y) through the shelf, centred on the pin edge
-  (pins 0.8 mm inboard of the body face nearer X = 2.0 → slot X 2.1…3.7),
-  Y −30.6…−20.6. Legs hang through; wires solder underneath (4 mm of space
-  above the bottom plate).
+- Leg slots: 1.6 (X) × 10.0 (Y) through the shelf on *both* sides, centred
+  0.8 mm inboard of each body side face (X 2.0…3.6 and 6.4…8.0), Y
+  −30.6…−20.6, so the jack can go in either way round. Legs hang through;
+  wires solder underneath (4 mm of space above the bottom plate).
 
 ### 5. Fusion order
 
