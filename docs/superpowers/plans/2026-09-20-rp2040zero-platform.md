@@ -1,5 +1,7 @@
 # RP2040-Zero + TRRS platform Implementation Plan
 
+> **Superseded (2026-09-21).** This plan built rev. 1, which mounted over the rings and did not fit. Rev. 2 (a plate screwed from below, no Splinktegrated outline) is described in the spec; the code no longer has `outline_kicad.py`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A parametric FreeCAD script that builds, tests and exports the 3D-printed platform holding a Waveshare RP2040-Zero (components down) and a PJ-320A TRRS jack in a Skeletyl V4 case, replacing the Splinktegrated PCB.

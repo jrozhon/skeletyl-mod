@@ -3,9 +3,11 @@
 Usage: python3 check_clearance.py [path/to/case_v4_103.stl]
 
 Samples the case surface inside the platform's bounding box and reports
-sample points that fall inside the platform solid. Only points hugging a
-case ring (the Ø10.4 bore around the Ø10 ring) are tolerated. Also writes
-five cross-section PNGs (platform red, case blue) for eyeballing.
+sample points that fall inside the platform solid. Only points on the plane
+of the rings' free faces (Z = -3.75), where the plate top is pressed against
+the rings and against the flat underside of ring A's wall fillet, are
+tolerated; they are listed by region. Also writes
+five cross-section PNGs (platform red, case blue, held components green).
 """
 import os
 import struct
@@ -24,7 +26,7 @@ from FreeCAD import Vector  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CASE = os.path.join(HERE, "..", "refs", "Skeletyl", "V4", "case_v4_103.stl")
 SAMPLE_STEP = 0.25     # mm between surface samples
-RING_TOL = 0.35        # tolerated radial proximity to a case ring
+FACE_TOL = 0.05        # tolerated depth of a Z = RING_FACE_Z sample below the plate top
 
 
 def load_stl(path):
@@ -59,6 +61,10 @@ def sample_surface(tris, step):
 def platform_mesh(shape):
     m = MeshPart.meshFromShape(Shape=shape, LinearDeflection=0.02, AngularDeflection=0.1)
     return np.array([[list(p) for p in f.Points] for f in m.Facets])
+
+
+def compound_mesh(compound):
+    return np.vstack([platform_mesh(s) for s in compound.Solids])
 
 
 def section(tris, axis, val, u_axis, v_axis):
@@ -127,11 +133,17 @@ def main(case_path):
 
     fatal = 0
     if len(bad):
-        rings = np.array(rp.RING_CENTRES)
+        rings = np.array([rp.RING_A, rp.RING_B])
         d = np.min(np.linalg.norm(bad[:, None, :2] - rings[None, :, :], axis=2), axis=1)
-        ring_ok = d <= rp.RING_OD / 2 + RING_TOL
-        print("  within %.2f mm of a ring (expected, bore clearance): %d" % (rp.RING_OD / 2 + RING_TOL, ring_ok.sum()))
-        others = bad[~ring_ok]
+        on_face = np.abs(bad[:, 2] - rp.RING_FACE_Z) <= FACE_TOL
+        on_ring = on_face & (d <= rp.RING_FACE_OD / 2 + 0.1)
+        print("  on a ring face (expected, the plate is pressed against it): %d" % on_ring.sum())
+        fillet = bad[on_face & ~on_ring]
+        if len(fillet):
+            print("  on other case faces at Z %.2f (contact, not collision): %d, X %.1f..%.1f Y %.1f..%.1f"
+                  % (rp.RING_FACE_Z, len(fillet), fillet[:, 0].min(), fillet[:, 0].max(),
+                     fillet[:, 1].min(), fillet[:, 1].max()))
+        others = bad[~on_face]
         fatal = len(others)
         for p in others[:40]:
             print("  COLLISION at X %.2f Y %.2f Z %.2f" % tuple(p))
@@ -139,23 +151,28 @@ def main(case_path):
             print("  ... and %d more" % (fatal - 40))
 
     plat = platform_mesh(shape)
+    parts = compound_mesh(rp.make_components())
     ax, ay = rp.RING_A
     bx, by = rp.RING_B
-    # (file, axis, case plane, platform plane, u, v): Y-Z sections through the
-    # rings, the jack axis and the USB centre; plus an X-Z "rear view" that
-    # overlays the wall openings (cut inside the wall) with the platform's
-    # rearmost features (cut just inside its rear edge).
+    # (file, axis, case plane, platform/component plane, u, v): Y-Z sections
+    # through the rings, the jack axis and the USB centre; plus an X-Z "rear
+    # view" that overlays the wall openings (cut inside the 2 mm wall) with the
+    # platform's rearmost features and the connectors (cut inside the wall too,
+    # where the USB-C shell and the jack nose sit).
     views = [
         ("sec_ringA.png", 0, ax, ax, 1, 2),
         ("sec_ringB.png", 0, bx, bx, 1, 2),
         ("sec_jack.png", 0, rp.JACK_AXIS_X, rp.JACK_AXIS_X, 1, 2),
         ("sec_usb.png", 0, rp.BOARD_CX, rp.BOARD_CX, 1, 2),
-        ("sec_wall.png", 1, rp.WALL_INNER_Y - 0.5, rp.PLATE_REAR_Y + 0.5, 0, 2),
+        ("sec_wall.png", 1, rp.WALL_OUTER_Y + 1.5, rp.WALL_OUTER_Y + 1.5, 0, 2),
     ]
+    plo = np.minimum(lo, [bb.XMin, rp.WALL_OUTER_Y - 1.0, bb.ZMin])
+    phi = np.maximum(hi, [bb.XMax, bb.YMax, rp.RAIL_TOP_Z + 1.0])
     for fn, axis, case_val, plat_val, u, v in views:
         layers = [(section(case, axis, case_val, u, v), (40, 90, 220)),
-                  (section(plat, axis, plat_val, u, v), (220, 30, 30))]
-        write_png(os.path.join(HERE, fn), layers, lo[[u, v]], hi[[u, v]])
+                  (section(plat, axis, plat_val, u, v), (220, 30, 30)),
+                  (section(parts, axis, plat_val, u, v), (30, 160, 60))]
+        write_png(os.path.join(HERE, fn), layers, plo[[u, v]], phi[[u, v]])
         print("wrote", fn)
     return 1 if fatal else 0
 

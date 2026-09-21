@@ -1,6 +1,7 @@
 # Skeletyl RP2040-Zero + TRRS platform — design
 
-Date: 2026-09-20
+Date: 2026-09-20, revised 2026-09-21 (rev. 2: mounts from below; see
+"Revision history").
 
 ## Goal
 
@@ -10,197 +11,134 @@ the case's two existing M4 controller rings and holds:
 
 - a **Waveshare RP2040-Zero** (18 × 23.5 × 1.0 mm, castellated, USB-C on a
   short edge) mounted **components down** so its USB-C lines up with the
-  case's USB slot and BOOT/RESET are reachable from below;
+  case's USB slot and BOOT/RESET can be pressed from below;
 - a **PJ-320A** TRRS jack (12 × 6 × 5 mm body, Ø5 × 2 mm nose, barrel axis
   2.5 mm above its mounting face, 4 legs along one long edge) lined up with
-  the case's Ø5.7 jack hole.
+  the case's jack hole.
+
+Both are positioned by the platform and fixed with hot glue. Keep the part as
+simple as possible.
 
 Deliverable: a parametric FreeCAD Python script plus exported STEP/STL, in
-`rp2040zero_platform/` in this repo (`~/skeletyl_hardware`, kept separate
-from the QMK userspace).
+`rp2040zero_platform/` in this repo.
 
-## Reference measurements
-
-Taken from `Bastardkb/splinktegrated` (`splinktegrated.kicad_pcb`) and
-`Bastardkb/Skeletyl` (`V4/case_v4_103.stl`, `mods/pro micro mount plate`).
+## Reference measurements (Skeletyl V4 STL)
 
 ### Platform coordinate frame
 
 - Origin: centre of case ring **A** (the ring nearer the jack).
 - **X** to the right (toward ring B), **Y** toward the user (the rear wall is
-  at negative Y), **Z** up. Z = 0 is the top face of the case rings.
+  at negative Y), **Z** up (toward the switches). Z = 0 is the top face of
+  the case rings.
 - Case STL → platform: `X = x_case + 94.136`, `Y = z_case + 30.599`,
   `Z = y_case`.
-- KiCad → platform: translate H1 `(131.60262, 109.99266)` to the origin, then
-  rotate by `Δ = atan2(-28.267, 34.660) − atan2(-27.9, 34.587) ≈ −0.32°`
-  (rigid, no scale). KiCad y maps to +Y without a flip.
 
-### Case interface (V4)
+### Case interface
 
 | Feature | Value |
 | --- | --- |
 | Ring A centre | (0, 0) |
-| Ring B centre | (34.660, −28.267) — pitch 44.73 mm (PCB holes: 44.44) |
-| Rings | Ø10 outside, Ø5.5 insert bore, Z −3.75…0, nothing below them |
-| Rear wall inner face | Y = −31.8 (wall 4.2 mm thick, outer face Y = −36.0) |
-| Jack hole | Ø5.67, axis X = 5.0, Z = −1.22 |
-| USB slot | X 15.64…26.47 (centre 21.05, 10.8 wide), Z −3.06…4.0 (7 tall) |
-| Bottom plate top face | Z = −8 |
-
-### Pro Micro mod stack-up (adopted)
-
-Plate Z −4…−2 with Ø10 pockets that slip over the rings, pocket ceiling on the
-ring tops, 2 mm cap above with Ø5.8 holes, M4 screws from above into the
-existing heat-set inserts. Its board floor at Z = −2 puts a Pro Micro's
-micro-USB at Z ≈ +0.9 — consistent with the slot centre, which validates the
-frame above.
+| Ring B centre | (34.660, −28.267) |
+| Rings | Z −3.75…0; free face (heat-set insert side) at **Z −3.75**, a flat annulus Ø5.5…Ø10.6, nothing below it |
+| Above the rings | closed: the keywell underside is 12–20 mm up. The part can only be installed from the bottom-plate side |
+| Bottom plate top face | Z −8 → 4.25 mm between the ring faces and the plate |
+| Rear wall | outer face Y −36.07; inner face Y −32.0, **recessed to Y −34.1 between Z −5.5 and 3.0** (2 mm wall around the connectors; at the jack the recess spans Z −6.25…2.4) |
+| USB slot | X 16.09…25.91 (9.82 wide), Z −3.06…0.56 (3.62 tall), centre (21.0, −1.25); straight through the 2 mm wall, full-radius ends |
+| Jack hole | Ø5.2 through the wall, axis X 5.10, Z −1.60 (the mouth is chamfered to ≈Ø6.4, which is what earlier measurements caught) |
+| Left wall | slanted inner face: X −5.1 at Y ≥ 0, −3.87 at Y −10, −1.71 at Y −28, then a fillet into the rear wall |
+| Ring B surroundings | flat face at X 30.93 for Y ≤ −24, Z ≤ 1; case material at X ≥ 33 for Y ≤ −23 above the ring faces; free to X 38 in front of Y −22.5 |
+| Below Z −3.75 | free everywhere between the left wall, the rear wall and X 45 |
 
 ## Geometry
 
 All numbers are defaults of named parameters in the script.
 
-### 1. Base plate
+### 1. Plate
 
-- Outline: Splinktegrated head + neck from `Edge.Cuts`, i.e. everything with
-  KiCad y < 137.79 (the snap-off line of the USB daughterboard). Arcs kept
-  as arcs. The KiCad outline is closed across the snap line with a straight
-  segment.
-- Placed with the KiCad → platform transform, then the rear edge is trimmed
-  to Y ≥ −31.3 (0.5 mm from the wall).
-- Z −4.72…−2 (2.72 mm): the plate bottom is derived as the jack shelf bottom
-  (`JACK_HOLE_Z − JACK_AXIS_H − JACK_FLOOR_T`) so the whole underside is one
-  plane and the part prints flat without supports. 3.28 mm remain above the
-  bottom plate (Z −8) for a zip tie.
+- 2.0 mm thick, Z −5.75…−3.75: the top face is pressed against the ring
+  faces, the underside faces the bottom plate (print bed).
+- Outline = union of a body X −4.6…31.8 × Y −31.6…−8.47, a Ø14 pad around
+  each ring (ring A's joined to the body by a strip X −4.6…7 × Y −10…0),
+  clipped to the right of the left-wall polyline `LEFT_EDGE` (0.5 mm off the
+  wall) and in front of Y −31.6. No Splinktegrated outline, no tail.
+- **Window** X 13.5…28.5 × Y −31.6 (open at the rear)…−12.27 under the
+  board: BOOT/RESET and the LED are reachable with the bottom plate off.
+- **Screw seats**: Ø4.5 through hole; from below a Ø8.6 counterbore 0.8 mm
+  deep (1.2 mm floor) for the kit's M4 × 8 Torx screws (head Ø8 × 2.5,
+  measured). Head bottom at Z −7.45, 0.55 mm above the bottom plate. No
+  ring bores: the plate top simply meets the flat ring faces (and the flat
+  Z −3.75 underside of ring A's wall fillet).
 
-### 2. Ring pockets (×2, at A and B)
+### 2. Board frame (components down)
 
-The case rings are not free-standing cylinders (measured from the V4 STL):
-ring A hangs off a slanted wall at X ≈ −4.2…−5.1 with fillets filling the
-whole X < 0 side below Z = 0; ring B is a blob with a flat face at X = 30.9
-(from the rear wall up to Y = −24.5), a top face at Z = +0.25, and flares
-into the rear/right walls, leaving free space only in the 15°…195° sector.
+- USB-C centre on the slot centre Z −1.25 ⇒ shell Z −2.85…0.35, PCB
+  Z 0.35…1.35 (flat side up, solder there). Board X 12…30 (centre 21.0 =
+  slot centre), rear PCB edge Y −33.77 with the shell face 1 mm behind the
+  wall's outer face so a plug seats fully.
+- Two **ledge walls** 1.2 thick, plate → Z 0.35, the full length under both
+  long PCB edges (0.9 mm under the edge — castellation pads only). Right
+  ledge 0.63 mm off ring B's flat face.
+- Two **rails** 1.5 thick outside the ledges, plate → Z 2.35 (1 mm above the
+  PCB top: glue bridges PCB edge → rail). Left rail full length; right rail
+  from Y −22.5 forward (ring B's blob is behind that).
+- **Front stop** 1.5 thick at Y −9.97…−8.47, same height. The rear stop is
+  the USB-C in its slot.
+- 0.9 mm between the USB-C shell and the plate top; all other components are
+  shorter.
+- Margins: shell 8.94 × 3.2 in a 9.82 × 3.62 slot → 0.44 / 0.21 mm each
+  way. `USB_H`, `BOARD_X_SHIFT`, `BOARD_Z_SHIFT` are the knobs.
 
-- Bore Ø10.4 from Z −4 up to the ring's top (A: 0, B: 0.25), open at the
-  bottom; for ring B the bore also follows the flat face (X ≥ 30.6,
-  Y ≤ −24.2 (0.3 mm clearance, `RING_B_FLAT_CLEAR`)).
-- Seat: a full Ø9.2 disc from the ring top to Z = 2 under the screw head.
-- Boss: Ø12.8 cylinder from Z −4 to +2, kept only where the case is free —
-  ring A: X ≥ 0.5 (the wall and its fillets occupy the X < 0 side; the seat
-  disc alone carries the head there); ring B: the half-space 0.5 mm past the
-  centre toward 105°.
-- Ø4.5 through hole for M4.
-- Screw: M4 × 6 or 8 with a head ≤ Ø7 (DIN 912 socket head): at ring B the
-  rear wall is 3.5 mm from the screw axis, so a Ø7.6 button head would
-  touch it. The right rail stops 1 mm in front of ring B's flat face
-  (Y ≥ −23.5) so a Ø7 head has a clear footprint; a test sweeps a
-  Ø7.4 × 2.4 mm volume above each cap.
-- Ring B is only 3.5 mm from the rear wall and the case ring itself merges
-  into the wall, so its pocket is cut off by the same rear trim as the plate
-  (Y ≥ −31.3): the boss and bore are open toward the wall on that side.
+### 3. Jack pocket
 
-### 3. RP2040-Zero pocket (components down)
+- Body X 2.1…8.1 × Y −33.9…−21.9, lying in a **0.35 mm pocket** (floor
+  Z −4.10 = hole axis − 2.5) with 0.2 mm side/rear clearance, so the axis is
+  on the hole axis and the Ø5 nose (0.1 mm radial clearance) reaches to
+  0.17 mm behind the wall's outer face.
+- **Leg slots** through the plate along both body sides, from 1.4 mm inside
+  to 0.6 mm outside each side face (X 1.5…3.5 and 6.7…8.7), Y −31.6 (open at
+  the rear)…−22.9: legs may be under or beside the body, either way round.
+  The body rests on the 3.2 mm strip between the slots and on the front
+  1 mm.
+- **Ribs** 1.5 thick, 2.5 tall outside the slots (left from Y −29.6 forward,
+  where the left wall allows; right merged into the board's left rail) and
+  an **end stop** 0.3 mm behind the body. Position really comes from the
+  nose in the hole plus glue; ribs are a glue dam and rough guide.
 
-- Board 18 × 23.5, PCB 1.0 thick. USB-C: 8.94 wide, 3.2 tall, 7.35 long,
-  overhangs the PCB edge by `USB_OVERHANG = 1.3`.
-- Position: centre X = 21.05 + `BOARD_X_SHIFT` (default 0). USB-C front
-  face at Y = −31.8 − `USB_INTO_WALL` (1.0) = −32.8, so the PCB rear edge is
-  at Y = −31.5 and the front edge at Y = −8.0.
-- Heights: USB-C underside Z = −1.1, so the connector centre is at Z = +0.5.
-  PCB Z 2.1…3.1, flat solder side up.
-- Support (touches only bare PCB / metal shell):
-  - USB cradle: 6 (X) × 4 (Y) block centred on the connector, X 18.05…24.05,
-    Y −31.3…−27.3, top at Z = −1.1.
-  - Corner seats at the far (front) corners: 3 (X) × 1 (Y), top at Z = 2.1,
-    at Y −9.0…−8.0, X 12.05…15.05 and 27.05…30.05. (Pad rows on the board
-    stop ~1.6 mm short of the long-edge ends and ~3.9 mm short of the far
-    corners, so the seats rest on bare PCB.)
-- Guides: side rails 1.5 thick, 0.4 clearance to the board (inner faces at
-  X 11.65 and 30.45); left rail from Y −31.3, right rail from Y −23.5
-  (`RING_B_FLAT_Y_TOP + RAIL_R_GAP`), both to −6.1, Z −4.72…4.5. Front
-  end-stop 1.5 thick at Y −7.6…−6.1 between the rails, same height. Rails
-  are interrupted where zip-tie slots pass.
-- Floor window: the plate is cut away under the board, X 13.55…28.55,
-  Y −29.5…−9.5 (1.5 mm strips remain beside the zip-tie slots), leaving the
-  cradle and corner seats attached to the surrounding plate. Gives button
-  access (BOOT/RESET end up at Z ≈ +0.9 next to the USB-C) and component
-  clearance.
-- Zip-tie slots: 2 (X) × 5 (Y) through the plate and the rails, directly
-  outside the board edges (X 10.05…12.05 and 30.05…32.05), one pair at
-  Y −21…−16 and one at Y −14…−9 (both clear of ring B's pocket, whose
-  outer wall reaches Y ≈ −22 at those X). A 2.5 mm tie loops under the
-  plate and over the board.
-- Ring-cap relief: within the board pocket footprint (between the rail
-  inner faces) the ring caps are lowered to Z = PCB underside − 0.6 ≈ 1.47,
-  so ring B's cap cannot touch the board edge; the M4 head (Ø7.5) sits
-  entirely outside that footprint.
+### 4. Assembly order in the script
 
-### 4. PJ-320A pocket
+plate (body ∪ pads ∩ keep − window) ∪ frame ∪ ribs − jack pocket − leg
+slots − screw holes/counterbores → `removeSplitter()`. Single valid solid.
+`make_components()` returns the PCB, shell, jack body and nose at their
+design positions for the tests and the section drawings.
 
-- Jack axis X = 5.0. Body 6 wide → X 2.0…8.0; pocket X 1.8…8.2 (0.2 side
-  clearance).
-- Shelf top at Z = JACK_HOLE_Z − 2.5 = −3.72; 1.0 mm floor below it
-  (Z = −4.72), which is also the plate bottom, and spans the pocket plus its
-  walls.
-- Body front face at Y = −31.6 (0.2 from the wall); nose enters the wall
-  hole. Pocket length 12.3 → end-stop inner face at Y = −19.3.
-- Walls 1.5 thick on the two long sides and the front end, Z −4.72…+1.28
-  (full body height). Open toward the wall.
-- Leg slots: 1.6 (X) × 10.0 (Y) through the shelf on *both* sides, centred
-  0.8 mm inboard of each body side face (X 2.0…3.6 and 6.4…8.0), Y
-  −30.6…−20.6, so the jack can go in either way round. Legs hang through;
-  wires solder underneath (4 mm of space above the bottom plate).
+## Print
 
-### 5. Fusion order
-
-plate − window; + ring outers (each minus the cap relief); + rails +
-end-stop + cradle + seats; + jack block − jack pocket − leg slots; − zip-tie
-slots; − ring bores − cap holes; finally ∩ (Y ≥ −31.3) so nothing — ring B's
-boss included — lies behind the rear trim. Single solid, checked with
-`Shape.isValid()` and `len(Solids) == 1`.
-
-## Script
-
-`rp2040zero_platform/rp2040zero_platform.py`
-
-- Runs headless: `freecadcmd rp2040zero_platform.py` (exports
-  `rp2040zero_platform.FCStd`, `.step`, `.stl` next to the script) and as a
-  GUI macro (builds the part into the active document; no export).
-- Parameter block at the top: every number above, grouped by section, with
-  a one-line comment each.
-- Outline: the KiCad `Edge.Cuts` segments/arcs for the head + neck are
-  embedded as a Python list (start/end/mid points in KiCad coordinates)
-  extracted once from the PCB file, so the script has no external
-  dependency. The transform is applied at build time.
-- Pure `Part` workbench (`Part.makePolygon`/`Part.ArcOfCircle`, `Face`,
-  `extrude`, `makeCylinder`, `makeBox`, `fuse`, `cut`).
+Underside on the bed; everything grows upward; no bridges or supports.
+Tallest feature 8.1 mm.
 
 ## Verification
 
-1. Headless build succeeds; solid valid, one solid, volume printed.
-2. Collision check against `case_v4_103.stl`: rasterise both meshes into a
-   0.25 mm voxel grid over the platform's bounding box (case transformed
-   into the platform frame) and report voxels containing both surfaces.
-   Expected: none except the intentional ring/pocket contact (ring bore vs
-   ring outer surface) — reported by region so it is obviously benign.
-3. Section overlays (platform over case) through: ring A, ring B, the jack
-   axis, the USB slot centre. Saved as PNGs for eyeballing clearances.
-4. Bounding-box sanity: platform Z within −4.72…4.5; the underside is one
-   plane (ZMin == PLATE_Z0).
+1. `tests/test_platform.py`: single valid solid; flat underside; extents;
+   held components do not intersect the part; plate meets the ring faces;
+   counterbore geometry and head clearance to the bottom plate; clearances
+   to the rear wall, ring B and the left wall; USB-C centred in the slot;
+   ledges, rails, stop, window; jack axis on the hole axis, pocket, slots,
+   ribs; export writes three files.
+2. `check_clearance.py`: sample the case STL surface and report samples
+   inside the part; only samples on the Z −3.75 contact plane are allowed.
+   Writes YZ sections through both rings, the jack axis and the USB centre,
+   and an XZ rear view cut inside the 2 mm wall showing the nose in the hole
+   and the shell in the slot.
 
-## Assembly notes (go in the README)
+## Revision history
 
-- Print flat, pockets up, no supports. Mirror the STL in the slicer for the
-  other half, exactly like the case.
-- Solder wires on the RP2040-Zero's flat (label) side; it faces up.
-- BOOT/RESET face the bottom plate: remove the plate (or find a voronoi hole)
-  and press with a toothpick. Put `QK_BOOT` in the keymap; the
-  `RP2040_BOOTLOADER_DOUBLE_TAP_RESET*` settings in the firmware's
-  `keyboards/bastardkb/skeletyl/keymaps/jrozhon/config.h` (qmk_userspace)
-  are Splinky-only.
-- Before printing, measure the actual USB-C height and overhang on your
-  board and set `USB_H` / `USB_OVERHANG` if they differ.
-- Tightest tolerances: USB-C vs slot (≈0.9 mm each side) and jack barrel vs
-  hole (≈0.3 mm). `BOARD_X_SHIFT` and `JACK_AXIS_X` are the knobs.
-- USB-C reach: the receptacle face is ~3 mm behind the case's outer face;
-  use a cable whose overmold fits the 10.8 × 7 mm slot.
-- Screw heads ≤ Ø7 (DIN 912).
+- **Rev. 1 (2026-09-20)** put the plate *over* the rings with screw caps on
+  top and rails 9 mm tall, based on a mis-read of the case: it assumed the
+  rings were reachable from above and a 7 mm tall USB slot. Printed and
+  test-fitted: it could only be mounted upside down, was too tall for the
+  4.25 mm under the rings, and both connectors sat 1–3 mm too low. It also
+  carried the Splinktegrated neck for no reason and held the board on
+  3 × 1 mm pillars.
+- **Rev. 2 (2026-09-21)** re-measured the case: closed above the rings,
+  insert faces at Z −3.75, USB slot 3.62 mm tall, wall recess, jack hole
+  Ø5.2 at Z −1.60. Redesigned as this document describes.
