@@ -14,6 +14,7 @@ free (insert) faces are at Z = -3.75; the bottom plate is at Z = -8.
 Run headless:   freecadcmd rp2040zero_platform.py   (exports FCStd/STEP/STL)
 Or in FreeCAD:  open as a macro; the part is added to the active document.
 """
+import math
 import os
 import sys
 
@@ -64,10 +65,10 @@ PLATE_REAR_Y = -31.6           # rear edge (0.4 mm from the wall)
 RING_PAD_R = 7.0               # plate radius kept around each ring
 RING_A_PAD_Y0 = -10.0          # ring A pad joins the body with a strip from here to the ring centre
 SCREW_HOLE_D = 4.5             # M4 clearance
-HEAD_D = 8.0                   # screw head diameter
-HEAD_H = 2.5                   # screw head height (measured on the kit's M4 x 8 Torx screws)
-HEAD_CLEAR = 0.3               # counterbore radial clearance
-SEAT_FLOOR_T = 1.2             # plate left under the head (counterbore depth = PLATE_T - this)
+HEAD_D = 8.0                   # countersunk (conical) head diameter
+HEAD_H = 2.5                   # head height (measured on the kit's M4 x 8 Torx screws)
+CSK_ANGLE = 90.0               # countersink included angle (ISO countersunk heads are 90 deg)
+CSK_DEPTH = 1.2                # countersink depth; a full-depth seat would not fit the 2 mm plate
 
 # ---------------------------------------------------------------------------
 # RP2040-Zero, components down, USB-C toward the rear wall
@@ -104,8 +105,10 @@ SER_RECESS = 1.0               # shell front face this far behind the wall's out
 # ---------------------------------------------------------------------------
 PLATE_Z1 = RING_FACE_Z                       # plate top on the ring faces
 PLATE_Z0 = PLATE_Z1 - PLATE_T                # plate bottom (print bed)
-COUNTERBORE_DEPTH = PLATE_T - SEAT_FLOOR_T
-HEAD_BOTTOM_Z = PLATE_Z0 + COUNTERBORE_DEPTH - HEAD_H
+CSK_D = SCREW_HOLE_D + 2 * CSK_DEPTH * math.tan(math.radians(CSK_ANGLE / 2))   # at the underside
+# Worst case: the head's narrow end sits no deeper than the top of the cone,
+# so the head hangs at most HEAD_H - CSK_DEPTH below the plate.
+HEAD_BOTTOM_Z = PLATE_Z0 + CSK_DEPTH - HEAD_H
 
 USB_CENTER_Z = (USB_SLOT_Z[0] + USB_SLOT_Z[1]) / 2.0
 USB_Z0 = USB_CENTER_Z - USB_H / 2.0 + BOARD_Z_SHIFT   # shell underside
@@ -189,11 +192,15 @@ def make_window():
 
 
 def make_screw_cutters():
-    """M4 through hole plus the counterbore for the head, from below."""
+    """M4 through hole plus a countersink for the conical head, from below."""
+    t = math.tan(math.radians(CSK_ANGLE / 2))
+    z_top = PLATE_Z0 + CSK_DEPTH
     cutters = []
     for cx, cy in (RING_A, RING_B):
         cutters.append(cyl(cx, cy, SCREW_HOLE_D, PLATE_Z0 - 1.0, PLATE_Z1 + 1.0))
-        cutters.append(cyl(cx, cy, HEAD_D + 2 * HEAD_CLEAR, PLATE_Z0 - 1.0, PLATE_Z0 + COUNTERBORE_DEPTH))
+        # the cone starts 1 mm below the underside so it cuts cleanly through it
+        cutters.append(Part.makeCone(SCREW_HOLE_D / 2 + (CSK_DEPTH + 1.0) * t, SCREW_HOLE_D / 2,
+                                     CSK_DEPTH + 1.0, Vector(cx, cy, PLATE_Z0 - 1.0)))
     return fuse_all(cutters)
 
 

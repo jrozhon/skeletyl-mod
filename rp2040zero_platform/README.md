@@ -27,7 +27,7 @@ too.
   (mirror it in the slicer for the other half). The only change is the rear
   wall: the round jack hole is filled and a 9.82 × 3.62 USB-C slot sits
   next to the RP2040's.
-- **Platform:** underside (the face with the two screw counterbores) on the
+- **Platform:** underside (the face with the two screw countersinks) on the
   bed, no supports. 0.2 mm layers, 3 perimeters. Mirror for the other half.
 
 ## Assemble
@@ -57,7 +57,7 @@ the bottom plate, the ledges and pedestal point up toward the switches.
 | `SER_H` / `SER_W` | 3.2 / 8.94 | Serial shell; sets the pedestal height. The slot has 0.21 mm each way vertically, 0.44 sideways |
 | `SER_SHELL_L` | 9.0 | Shell length; the pedestal ends under the shell's rear |
 | `SER_RECESS` / `USB_RECESS` | 1.0 | Shell faces behind the wall's outer face (wall is 2 mm) |
-| `HEAD_D` / `HEAD_H` | 8.0 / 2.5 | Screw head; sets the counterbore |
+| `CSK_ANGLE` / `CSK_DEPTH` | 90 / 1.2 | Countersink for the conical heads: Ø6.9 at the underside down to the Ø4.5 hole. A full-depth seat does not fit the 2 mm plate, so the head hangs ≤ 1.3 mm below it (0.95 mm clear of the bottom plate) |
 
 Both USB-C shells need rounded corners (≥ R0.8) to pass the slots'
 full-radius ends.

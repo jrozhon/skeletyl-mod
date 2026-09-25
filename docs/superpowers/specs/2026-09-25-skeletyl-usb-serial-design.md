@@ -57,7 +57,13 @@ Removed: jack pocket, leg slots, jack ribs and end stop; the RP2040 rails
 and front stop (the left rail would collide with the new shell).
 
 Kept unchanged: plate outline (same numbers: X −4.6…31.8, Y −31.6…−8.47,
-ring pads, left-wall clip), window, screw seats/counterbores, the two ledges.
+ring pads, left-wall clip), window, the two ledges.
+
+Changed: the screw seats. The kit screws have conical (countersunk) heads, so
+the flat counterbores did nothing; each seat is now a 90° countersink 1.2 mm
+deep (Ø6.9 at the underside → the Ø4.5 hole, 0.8 mm straight above). A
+full-depth seat (2.05 mm) does not fit the 2 mm plate; the head hangs at most
+1.3 mm below the plate, 0.95 mm clear of the bottom plate.
 
 New: **pedestal** under the USB-C shell.
 

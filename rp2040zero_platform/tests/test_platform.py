@@ -34,7 +34,7 @@ class ShapeTest(unittest.TestCase):
         self.assertEqual(len(low), 1)
 
     def test_extents(self):
-        bb = self.shape.BoundBox
+        bb = self.shape.optimalBoundingBox(True, False)   # the fast box is loose around curved edges
         self.assertAlmostEqual(bb.YMin, rp.PLATE_REAR_Y, places=4)
         self.assertAlmostEqual(bb.ZMax, rp.PCB_Z0, places=4)
         self.assertAlmostEqual(bb.XMin, rp.LEFT_EDGE[0][0], places=4)
@@ -61,18 +61,22 @@ class ShapeTest(unittest.TestCase):
                         continue
                     self.assertTrue(inside(self.shape, cx + dx, cy + dy, rp.PLATE_Z1 - EPS), (cx, cy, dx, dy))
 
-    def test_screw_hole_and_counterbore(self):
+    def test_screw_hole_and_countersink(self):
         for cx, cy in (rp.RING_A, rp.RING_B):
             self.assertFalse(inside(self.shape, cx, cy, rp.PLATE_Z1 - EPS))
-            # counterbore: open from below up to its floor, solid above it
-            r = rp.HEAD_D / 2 + rp.HEAD_CLEAR - EPS
-            self.assertFalse(inside(self.shape, cx + r, cy, rp.PLATE_Z0 + rp.COUNTERBORE_DEPTH - EPS))
-            self.assertTrue(inside(self.shape, cx + r, cy, rp.PLATE_Z0 + rp.COUNTERBORE_DEPTH + EPS))
-            self.assertTrue(inside(self.shape, cx + r + 2 * EPS, cy, rp.PLATE_Z0 + EPS))
+            # 90 deg cone from Ø CSK_D at the underside down to the Ø4.5 hole
+            for z, r in ((rp.PLATE_Z0 + EPS, rp.CSK_D / 2 - EPS),
+                         (rp.PLATE_Z0 + rp.CSK_DEPTH / 2, (rp.CSK_D + rp.SCREW_HOLE_D) / 4)):
+                self.assertFalse(inside(self.shape, cx + r - 0.1, cy, z), (cx, z))
+                self.assertTrue(inside(self.shape, cx + r + 0.1, cy, z), (cx, z))
+            # straight hole above the cone
+            z = rp.PLATE_Z0 + rp.CSK_DEPTH + EPS
+            self.assertFalse(inside(self.shape, cx + rp.SCREW_HOLE_D / 2 - 0.1, cy, z))
+            self.assertTrue(inside(self.shape, cx + rp.SCREW_HOLE_D / 2 + 0.1, cy, z))
 
     def test_screw_head_clears_the_bottom_plate(self):
-        self.assertGreaterEqual(rp.HEAD_BOTTOM_Z, rp.BOTTOM_PLATE_Z + 0.3)
-        self.assertGreaterEqual(rp.SEAT_FLOOR_T, 0.8)
+        self.assertGreaterEqual(rp.HEAD_BOTTOM_Z, rp.BOTTOM_PLATE_Z + 0.5)
+        self.assertGreaterEqual(rp.PLATE_T - rp.CSK_DEPTH, 0.6)
 
     # -- case clearances (numbers measured from the V4 STL) ---------------
     def test_clear_of_the_rear_wall(self):
