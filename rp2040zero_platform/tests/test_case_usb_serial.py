@@ -108,6 +108,14 @@ class CaseModTest(unittest.TestCase):
         # fill (hole + chamfer, ~+42) minus slot through 2 mm (~-65): measured -23.3
         self.assertAlmostEqual(self.mod.Volume - self.orig.Volume, -23.3, delta=2.0)
 
+    def test_check_accepts_the_modified_case(self):
+        self.assertIsNone(cs.check(self.orig, self.mod))
+
+    def test_check_rejects_a_failed_boolean(self):
+        # an unchanged case (boolean silently did nothing) and a split result
+        self.assertIsNotNone(cs.check(self.orig, self.orig))
+        self.assertIsNotNone(cs.check(self.orig, self.mod.fuse(cs.make_slot_cutter().translate(Vector(0, 0, 50)))))
+
     def test_nothing_changes_outside_the_edit_region(self):
         with tempfile.TemporaryDirectory() as d:
             out = os.path.join(d, "case.stl")

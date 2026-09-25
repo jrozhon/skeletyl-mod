@@ -37,6 +37,8 @@ PLUG_OUTER_GAP = 0.15          # plug's outer end this far inside the outer face
 SLOT_CUT_Y = (-37.5, -33.5)    # slot cutter runs through the whole wall along Y
 # Platform-frame box around the rear-left wall; the modification stays inside it.
 EDIT_REGION = ((-1.0, 13.0), (-38.0, -33.0), (-6.0, 2.5))
+EXPECTED_DV = -23.8            # volume change of a good run: fill minus slot, mm^3
+DV_TOL = 5.0
 
 # case (x, y, z) -> platform (x + 94.136, z + 30.599, y)
 CASE_TO_PLATFORM = Matrix(1, 0, 0, 94.136,
@@ -78,6 +80,17 @@ def modify(case):
     return case.fuse(make_plug()).cut(make_slot_cutter())
 
 
+def check(case, shape):
+    """None if `shape` looks like a good modification of `case`, else why not.
+    Guards against a boolean that silently did nothing or fell apart."""
+    if len(shape.Solids) != 1:
+        return "expected 1 solid, got %d" % len(shape.Solids)
+    dv = shape.Volume - case.Volume
+    if abs(dv - EXPECTED_DV) > DV_TOL:
+        return "volume change %.1f mm^3, expected %.1f +- %.1f" % (dv, EXPECTED_DV, DV_TOL)
+    return None
+
+
 def export(shape, path):
     """Write `shape` (platform frame) as an STL in case coordinates."""
     back = shape.transformGeometry(CASE_TO_PLATFORM.inverse())
@@ -92,6 +105,10 @@ def main(case_path=DEFAULT_CASE, out_path=OUT_PATH):
     case = load_case(case_path)
     shape = modify(case)
     print("solids: %d  volume change %.1f mm^3" % (len(shape.Solids), shape.Volume - case.Volume))
+    problem = check(case, shape)
+    if problem:
+        print("NOT written, the boolean went wrong: %s" % problem)
+        return 1
     export(shape, out_path)
     print("wrote", out_path)
     return 0
