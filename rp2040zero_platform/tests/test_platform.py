@@ -36,7 +36,7 @@ class ShapeTest(unittest.TestCase):
     def test_extents(self):
         bb = self.shape.optimalBoundingBox(True, False)   # the fast box is loose around curved edges
         self.assertAlmostEqual(bb.YMin, rp.PLATE_REAR_Y, places=4)
-        self.assertAlmostEqual(bb.ZMax, rp.PCB_Z0, places=4)
+        self.assertAlmostEqual(bb.ZMax, rp.CORNER_TOP_Z, places=4)
         self.assertAlmostEqual(bb.XMin, rp.LEFT_EDGE[0][0], places=4)
         self.assertAlmostEqual(bb.XMax, rp.RING_B[0] + rp.RING_PAD_R, places=4)
 
@@ -124,21 +124,51 @@ class ShapeTest(unittest.TestCase):
     def test_components_clear_the_plate(self):
         self.assertGreaterEqual(rp.USB_Z0 - rp.PLATE_Z1, 0.5)
 
-    def test_only_ledges_and_pedestal_stand_above_the_plate(self):
+    def test_only_ledges_pedestal_and_corner_stops_stand_above_the_plate(self):
         ledges = ((rp.LEDGE_X0, rp.LEDGE_X0 + rp.LEDGE_W), (rp.LEDGE_X1 - rp.LEDGE_W, rp.LEDGE_X1))
+        # corner stops: the bounding boxes of the two Ls
+        corners = ((rp.BOARD_X0 - rp.CORNER_GAP - rp.CORNER_T, rp.BOARD_X0 + rp.CORNER_REACH),
+                   (rp.BOARD_X1 - rp.CORNER_REACH, rp.BOARD_X1 + rp.CORNER_GAP + rp.CORNER_T))
         for x in [rp.LEFT_EDGE[0][0] + 0.25 + 0.5 * i for i in range(80)]:
             for y in [rp.PLATE_REAR_Y + 0.25 + 0.5 * j for j in range(60)]:
                 if not inside(self.shape, x, y, rp.PLATE_Z1 + 0.3):
                     continue
                 in_ledge = any(a <= x <= b for a, b in ledges) and y <= rp.LEDGE_Y1
                 in_pedestal = rp.SER_X0 <= x <= rp.SER_X1 and y <= rp.SER_SHELL_Y1
-                self.assertTrue(in_ledge or in_pedestal, (x, y))
+                in_corner = (any(a <= x <= b for a, b in corners)
+                             and rp.BOARD_Y1 - rp.CORNER_SIDE_L <= y <= rp.CORNER_Y1)
+                self.assertTrue(in_ledge or in_pedestal or in_corner, (x, y))
 
     def test_old_jack_features_gone(self):
         # plate is full thickness where the pocket and the leg slots were
         for x in (rp.JACK_AXIS_X - 2.6, rp.JACK_AXIS_X, rp.JACK_AXIS_X + 2.6):
             self.assertTrue(inside(self.shape, x, -26.0, rp.PLATE_Z0 + 0.1), x)
             self.assertTrue(inside(self.shape, x, -26.0, rp.PLATE_Z1 - 0.1), x)
+
+    # -- corner stops at the board's front (cable push, positioning) -------
+    def test_corner_stops_are_sturdy(self):
+        self.assertGreaterEqual(rp.CORNER_T, 2.0)
+        self.assertGreaterEqual(rp.CORNER_TOP_Z, rp.PCB_Z1 + 0.3)
+        self.assertLess(rp.CORNER_TOP_Z, 3.0)
+
+    def test_front_arms_stop_the_board_at_both_corners(self):
+        ym = rp.CORNER_Y0 + rp.CORNER_T / 2
+        for x in (rp.BOARD_X0 + 1.0, rp.BOARD_X1 - 1.0):
+            self.assertTrue(inside(self.shape, x, ym, rp.CORNER_TOP_Z - EPS), x)
+            self.assertFalse(inside(self.shape, x, ym, rp.CORNER_TOP_Z + EPS), x)
+            self.assertTrue(inside(self.shape, x, ym, rp.PLATE_Z0 + EPS), x)      # stands on its own footing
+            self.assertFalse(inside(self.shape, x, rp.CORNER_Y0 - EPS, rp.PCB_Z1), x)   # gap to the PCB edge
+        self.assertAlmostEqual(rp.CORNER_Y0 - rp.BOARD_Y1, rp.CORNER_GAP)
+        # only the corners: the middle of the front edge stays open
+        self.assertFalse(inside(self.shape, rp.BOARD_CX, ym, rp.PCB_Z0))
+
+    def test_side_arms_locate_the_board_sideways(self):
+        y = rp.BOARD_Y1 - 1.0
+        for x_arm, x_gap in ((rp.BOARD_X0 - rp.CORNER_GAP - rp.CORNER_T / 2, rp.BOARD_X0 - rp.CORNER_GAP / 2),
+                             (rp.BOARD_X1 + rp.CORNER_GAP + rp.CORNER_T / 2, rp.BOARD_X1 + rp.CORNER_GAP / 2)):
+            self.assertTrue(inside(self.shape, x_arm, y, rp.CORNER_TOP_Z - EPS), x_arm)
+            self.assertFalse(inside(self.shape, x_gap, y, rp.PCB_Z1), x_gap)
+            self.assertFalse(inside(self.shape, x_arm, rp.BOARD_Y1 - rp.CORNER_SIDE_L - EPS, rp.PCB_Z1), x_arm)
 
     # -- USB-C serial breakout -----------------------------------------------
     def test_serial_shell_centred_in_the_new_slot(self):
@@ -171,6 +201,12 @@ class ShapeTest(unittest.TestCase):
         for x in (rp.SER_CX - rp.SER_PCB_W / 2 + 0.1, rp.SER_CX, rp.SER_CX + rp.SER_PCB_W / 2 - 0.1):
             self.assertFalse(inside(self.shape, x, y, rp.PLATE_Z1 + EPS), x)
             self.assertFalse(inside(self.shape, x, y, rp.SER_CZ), x)
+
+
+class ImportTest(unittest.TestCase):
+    def test_check_clearance_uses_the_platform_module_inside_the_package(self):
+        from rp2040zero_platform import check_clearance
+        self.assertTrue(hasattr(check_clearance.rp, "build"))
 
 
 class ExportTest(unittest.TestCase):

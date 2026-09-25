@@ -16,9 +16,13 @@ import zlib
 
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import freecad_path  # noqa: F401,E402
-import rp2040zero_platform as rp  # noqa: E402
+try:  # imported as a package member (tests): the bare name would be the package
+    from . import freecad_path  # noqa: F401
+    from . import rp2040zero_platform as rp
+except ImportError:  # run as a script
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import freecad_path  # noqa: F401,E402
+    import rp2040zero_platform as rp  # noqa: E402
 
 import MeshPart  # noqa: E402
 from FreeCAD import Vector  # noqa: E402

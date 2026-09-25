@@ -86,6 +86,11 @@ BOARD_Z_SHIFT = 0.0            # nudge the board up/down (the shell has 0.2 mm e
 BOARD_CLEAR = 0.3              # PCB side/front edge -> ledge outer edge / ledge end
 LEDGE_W = 1.2                  # ledge walls under the long PCB edges (their inner 0.9 mm carry the PCB)
 PLATE_MARGIN = 1.5             # plate beyond the right ledge and in front of the ledges (rev. 2 outline)
+CORNER_GAP = 0.2               # PCB front/side edge -> corner stop
+CORNER_T = 2.5                 # corner stop arm thickness (takes the cable's push)
+CORNER_REACH = 2.5             # front arm reaches this far in from each PCB side edge
+CORNER_SIDE_L = 3.0            # side arm runs this far back from the PCB front edge
+CORNER_ABOVE_PCB = 0.5         # stops stand this far above the PCB top (drop-in lip, glue here)
 WINDOW_INSET = 1.5             # floor window inset from the PCB side edges
 WINDOW_FRONT_GAP = 2.0         # floor window ends this far before the PCB front edge
 
@@ -123,6 +128,9 @@ BOARD_Y1 = BOARD_Y0 + BOARD_L                # front edge
 LEDGE_X0 = BOARD_X0 - BOARD_CLEAR            # left ledge outer edge
 LEDGE_X1 = BOARD_X1 + BOARD_CLEAR            # right ledge outer edge
 LEDGE_Y1 = BOARD_Y1 + BOARD_CLEAR            # ledges end here
+CORNER_Y0 = BOARD_Y1 + CORNER_GAP            # front arms' inner face
+CORNER_Y1 = CORNER_Y0 + CORNER_T
+CORNER_TOP_Z = PCB_Z1 + CORNER_ABOVE_PCB
 PLATE_FRONT_Y = LEDGE_Y1 + PLATE_MARGIN
 PLATE_RIGHT_X = LEDGE_X1 + PLATE_MARGIN
 
@@ -215,6 +223,19 @@ def make_ledges():
     ])
 
 
+def make_corner_stops():
+    """An L at each front corner of the board: the front arm stops it when a
+    cable is pushed in, the side arm locates it sideways. Each L stands on
+    its own footing from the bed, past the plate edge where needed."""
+    ls = []
+    for edge, out in ((BOARD_X0, -1.0), (BOARD_X1, 1.0)):
+        x_in = edge + out * CORNER_GAP                  # side arm inner face
+        x_out = x_in + out * CORNER_T                   # side arm outer face
+        ls.append(box(x_out, x_in, BOARD_Y1 - CORNER_SIDE_L, CORNER_Y1, PLATE_Z0, CORNER_TOP_Z))
+        ls.append(box(x_out, edge - out * CORNER_REACH, CORNER_Y0, CORNER_Y1, PLATE_Z0, CORNER_TOP_Z))
+    return fuse_all(ls)
+
+
 def make_pedestal():
     """Block under the serial USB-C shell: puts it at the slot height."""
     return box(SER_X0, SER_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, SER_Z0).common(make_keep())
@@ -225,7 +246,7 @@ def make_pedestal():
 # ---------------------------------------------------------------------------
 def build():
     """Return the finished platform as a single solid."""
-    shape = make_plate().fuse(make_ledges()).fuse(make_pedestal())
+    shape = fuse_all([make_plate(), make_ledges(), make_corner_stops(), make_pedestal()])
     return shape.cut(make_screw_cutters()).removeSplitter()
 
 
