@@ -1,6 +1,6 @@
 """Check the platform against the Skeletyl V4 case STL.
 
-Usage: python3 check_clearance.py [path/to/case_v4_103.stl]
+Usage: python3 check_clearance.py [path/to/case.stl]   (default: the modified case from case_usb_serial.py)
 
 Samples the case surface inside the platform's bounding box and reports
 sample points that fall inside the platform solid. Only points on the plane
@@ -24,7 +24,7 @@ import MeshPart  # noqa: E402
 from FreeCAD import Vector  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_CASE = os.path.join(HERE, "..", "refs", "Skeletyl", "V4", "case_v4_103.stl")
+DEFAULT_CASE = os.path.join(HERE, "case_v4_103_usb_serial.stl")   # written by case_usb_serial.py
 SAMPLE_STEP = 0.25     # mm between surface samples
 FACE_TOL = 0.05        # tolerated depth of a Z = RING_FACE_Z sample below the plate top
 
@@ -116,6 +116,9 @@ def write_png(fn, layers, lo, hi, res=0.05):
 
 
 def main(case_path):
+    if not os.path.exists(case_path):
+        print("case STL not found: %s (run case_usb_serial.py first)" % case_path)
+        return 1
     shape = rp.build()
     bb = shape.BoundBox
     case = case_to_platform(load_stl(case_path))
@@ -155,19 +158,17 @@ def main(case_path):
     ax, ay = rp.RING_A
     bx, by = rp.RING_B
     # (file, axis, case plane, platform/component plane, u, v): Y-Z sections
-    # through the rings, the jack axis and the USB centre; plus an X-Z "rear
-    # view" that overlays the wall openings (cut inside the 2 mm wall) with the
-    # platform's rearmost features and the connectors (cut inside the wall too,
-    # where the USB-C shell and the jack nose sit).
+    # through the rings and both USB-C centres; plus an X-Z "rear view" cut
+    # inside the 2 mm wall showing both shells in their slots.
     views = [
         ("sec_ringA.png", 0, ax, ax, 1, 2),
         ("sec_ringB.png", 0, bx, bx, 1, 2),
-        ("sec_jack.png", 0, rp.JACK_AXIS_X, rp.JACK_AXIS_X, 1, 2),
+        ("sec_serial.png", 0, rp.SER_CX, rp.SER_CX, 1, 2),
         ("sec_usb.png", 0, rp.BOARD_CX, rp.BOARD_CX, 1, 2),
         ("sec_wall.png", 1, rp.WALL_OUTER_Y + 1.5, rp.WALL_OUTER_Y + 1.5, 0, 2),
     ]
     plo = np.minimum(lo, [bb.XMin, rp.WALL_OUTER_Y - 1.0, bb.ZMin])
-    phi = np.maximum(hi, [bb.XMax, bb.YMax, rp.RAIL_TOP_Z + 1.0])
+    phi = np.maximum(hi, [bb.XMax, bb.YMax, rp.PCB_Z1 + 2.0])
     for fn, axis, case_val, plat_val, u, v in views:
         layers = [(section(case, axis, case_val, u, v), (40, 90, 220)),
                   (section(plat, axis, plat_val, u, v), (220, 30, 30)),

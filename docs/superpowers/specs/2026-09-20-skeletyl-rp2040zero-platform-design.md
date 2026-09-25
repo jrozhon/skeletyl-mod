@@ -1,5 +1,9 @@
 # Skeletyl RP2040-Zero + TRRS platform — design
 
+> Rev. 3 (2026-09-25, branch `usb-serial`) replaces the TRRS jack with a
+> USB-C breakout and drops the rails and front stop: see
+> `2026-09-25-skeletyl-usb-serial-design.md`.
+
 Date: 2026-09-20, revised 2026-09-21 (rev. 2: mounts from below; see
 "Revision history").
 

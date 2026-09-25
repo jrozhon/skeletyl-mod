@@ -9,7 +9,7 @@ The case STL is not a perfectly valid solid (a few self-intersecting facets
 far from the rear-left corner); OCC still gives one solid and the tests check
 that nothing outside EDIT_REGION changes.
 
-Usage: python3 case_usb_serial.py [path/to/case_v4_103.stl]   (~90 s)
+Usage: python3 case_usb_serial.py [path/to/case_v4_103.stl]   (~3 min)
 """
 import os
 import sys
