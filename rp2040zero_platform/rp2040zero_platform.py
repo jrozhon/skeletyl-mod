@@ -99,9 +99,9 @@ WINDOW_FRONT_GAP = 2.0         # floor window ends this far before the PCB front
 # ---------------------------------------------------------------------------
 SER_W = 8.94                   # shell width (X)
 SER_H = 3.2                    # shell height (the slot is 3.62: 0.21 mm each way)
-SER_SHELL_L = 9.0              # shell length (Y)
-SER_PCB_W = 9.0                # breakout PCB width
-SER_PCB_L = 5.0                # PCB tail behind the shell (pads U, D+, D-, G)
+SER_L = 14.6                   # overall length, shell face to PCB end (datasheet)
+SER_SHELL_L = 9.0              # shell length (Y); only sets where the pedestal ends
+SER_PCB_W = 9.8                # breakout PCB width (datasheet), centred on the shell
 SER_PCB_T = 0.8                # PCB thickness (thinner is fine: the tail is free)
 SER_RECESS = 1.0               # shell front face this far behind the wall's outer face
 
@@ -141,7 +141,12 @@ SER_X1 = SER_CX + SER_W / 2.0
 SER_Z0 = SER_CZ - SER_H / 2.0                # shell underside = pedestal top
 SER_FACE_Y = WALL_OUTER_Y + SER_RECESS       # shell front face
 SER_SHELL_Y1 = SER_FACE_Y + SER_SHELL_L      # shell rear = pedestal front
-SER_PCB_Y1 = SER_SHELL_Y1 + SER_PCB_L        # end of the PCB tail
+SER_PCB_Y1 = SER_FACE_Y + SER_L              # end of the PCB tail (pads U, D+, D-, G)
+SER_PCB_X0 = SER_CX - SER_PCB_W / 2.0
+SER_PCB_X1 = SER_CX + SER_PCB_W / 2.0
+SER_STOP_Y0 = SER_PCB_Y1 + CORNER_GAP        # stops behind the PCB end
+SER_STOP_Y1 = SER_STOP_Y0 + CORNER_T
+SER_STOP_TOP_Z = SER_CZ + SER_PCB_T / 2.0 + CORNER_ABOVE_PCB
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -236,6 +241,20 @@ def make_corner_stops():
     return fuse_all(ls)
 
 
+def make_serial_stops():
+    """Stops behind the breakout's PCB end, one at each corner (the middle
+    stays open for the wires): they take the cable's push. The left one is
+    an L that also guides the PCB's side; on the right the RP2040's left
+    ledge does that, so that arm just runs into the ledge."""
+    y0, y1, top = SER_STOP_Y0, SER_STOP_Y1, SER_STOP_TOP_Z
+    x_in = SER_PCB_X0 - CORNER_GAP                  # left side arm inner face
+    return fuse_all([
+        box(x_in - CORNER_T, x_in, SER_PCB_Y1 - CORNER_SIDE_L, y1, PLATE_Z0, top),
+        box(x_in - CORNER_T, SER_PCB_X0 + CORNER_REACH, y0, y1, PLATE_Z0, top),
+        box(SER_PCB_X1 - CORNER_REACH, LEDGE_X0, y0, y1, PLATE_Z0, top),
+    ])
+
+
 def make_pedestal():
     """Block under the serial USB-C shell: puts it at the slot height."""
     return box(SER_X0, SER_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, SER_Z0).common(make_keep())
@@ -246,7 +265,7 @@ def make_pedestal():
 # ---------------------------------------------------------------------------
 def build():
     """Return the finished platform as a single solid."""
-    shape = fuse_all([make_plate(), make_ledges(), make_corner_stops(), make_pedestal()])
+    shape = fuse_all([make_plate(), make_ledges(), make_corner_stops(), make_serial_stops(), make_pedestal()])
     return shape.cut(make_screw_cutters()).removeSplitter()
 
 

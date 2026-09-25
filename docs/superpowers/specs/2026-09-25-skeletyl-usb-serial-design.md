@@ -78,7 +78,14 @@ New: **pedestal** under the USB-C shell.
   back, hot glue shell → pedestal. The PCB tail is free (any thickness ≤ 0.8
   works) so wires can be soldered to the pads before or after.
 
-Parameters: `SER_W`, `SER_H`, `SER_SHELL_L`, `SER_PCB_L`, `SER_PCB_W`,
+**Serial stops** (added with the user): the datasheet gives 14.6 mm overall
+and a 9.8 mm wide PCB (tail 5.6 mm, PCB X 1.70…11.50, end at Y −20.47). Stops
+0.2 mm behind the PCB end, 2.5 mm thick, up to 0.5 mm above the PCB top
+(Z −0.35, below the RP2040): an L at the left corner (side arm 3 mm) and a
+straight arm on the right that runs into the RP2040's left ledge, which is
+the right side guide (0.2 mm off the PCB). The middle stays open for wires.
+
+Parameters: `SER_W`, `SER_H`, `SER_SHELL_L`, `SER_L`, `SER_PCB_W`,
 `SER_PCB_T`, `SER_CENTER_X`, `SER_RECESS`; the new slot position lives in
 one place shared by both scripts.
 
