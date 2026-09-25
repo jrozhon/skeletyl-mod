@@ -33,7 +33,7 @@ too.
 ## Assemble
 
 The platform goes in from the bottom-plate side: the flat underside faces
-the bottom plate, the ledges and pedestal point up toward the switches.
+the bottom plate, the ledges, corner stops and pedestal point up toward the switches.
 
 1. **Serial breakout.** Solder four wires to U, D+, D−, G first. Set the
    shell on the pedestal, push it into the new slot until its face is
@@ -41,8 +41,9 @@ the bottom plate, the ledges and pedestal point up toward the switches.
    tail is free.
 2. **Board.** Solder the wires to the RP2040-Zero's castellated pads first.
    Place it components down, USB-C toward the wall, long edges on the two
-   ledges, push the connector into its slot, and hot-glue the PCB edges to
-   the ledges.
+   ledges: it drops between the two L-shaped corner stops at its front
+   end, which locate it sideways and take the push when you plug a cable
+   in. Hot-glue the PCB to the ledges and along the stops' 0.5 mm lip.
 3. Hold the plate against the ring faces and drive the two M4 × 8 screws
    from below.
 4. BOOT/RESET face the bottom plate: remove it and press them through the
@@ -54,6 +55,7 @@ the bottom plate, the ledges and pedestal point up toward the switches.
 | --- | --- | --- |
 | `USB_H` | 3.2 | RP2040 USB-C shell height; sets the board height |
 | `BOARD_Z_SHIFT` / `BOARD_X_SHIFT` | 0.0 | Nudge the board if its shell catches in the slot |
+| `CORNER_T` / `CORNER_GAP` | 2.5 / 0.2 | Corner stops at the board's front: arm thickness and gap to the PCB edges (the board has 0.33 mm to the wall behind it) |
 | `SER_H` / `SER_W` | 3.2 / 8.94 | Serial shell; sets the pedestal height. The slot has 0.21 mm each way vertically, 0.44 sideways |
 | `SER_SHELL_L` | 9.0 | Shell length; the pedestal ends under the shell's rear |
 | `SER_RECESS` / `USB_RECESS` | 1.0 | Shell faces behind the wall's outer face (wall is 2 mm) |

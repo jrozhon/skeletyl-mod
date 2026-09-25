@@ -85,6 +85,14 @@ one place shared by both scripts.
 Board: unchanged position (components down, USB-C in the original slot,
 long edges on the ledges); glued along the ledges.
 
+**Corner stops** (added after review with the user): an L at each front
+corner of the board, 2.5 mm thick, 0.2 mm off the PCB edges, from the bed to
+0.5 mm above the PCB top (Z 1.85). The front arm reaches 2.5 mm in from the
+side edge and takes the push of a cable being plugged in; the side arm runs
+3 mm back and locates the board sideways. Each L stands on its own footing,
+so the outline grows by up to 0.9 mm at those corners (below the rings the
+case is free to X 45).
+
 ## Print
 
 Platform: underside on the bed, no supports; tallest feature now the ledges
