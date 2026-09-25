@@ -37,11 +37,16 @@ BOTTOM_PLATE_Z = -8.0          # top face of the bottom plate
 WALL_OUTER_Y = -36.07          # rear wall outer face
 WALL_INNER_Y = -32.0           # rear wall inner face below Z = -5.5 (and above 3.0)
 WALL_RECESS_Y = -34.1          # inner face between Z -5.5 and 3.0 (wall thinned to 2 mm for the connectors)
-JACK_AXIS_X = 5.10             # case jack hole axis
-JACK_HOLE_Z = -1.60            # case jack hole axis height
-JACK_HOLE_D = 5.2              # case jack hole through the 2 mm wall (its mouth is chamfered wider)
+JACK_AXIS_X = 5.10             # old TRRS jack hole axis (filled by case_usb_serial.py)
+JACK_HOLE_Z = -1.60            # old jack hole axis height
+JACK_HOLE_D = 5.2              # old jack hole through the 2 mm wall (its mouth is chamfered to ~6.4)
 USB_SLOT_X = (16.09, 25.91)    # case USB slot extents (through the 2 mm wall)
 USB_SLOT_Z = (-3.06, 0.56)
+CORNER_LUMP_X = 1.60           # rear-left corner: case material up to this X for Y -34..-32, Z >= -1.5
+SER_SLOT_CX = 6.60             # USB-C serial slot cut by case_usb_serial.py in place of the jack hole
+SER_SLOT_W = USB_SLOT_X[1] - USB_SLOT_X[0]   # same stadium as the RP2040 slot: 9.82 x 3.62
+SER_SLOT_X = (SER_SLOT_CX - SER_SLOT_W / 2.0, SER_SLOT_CX + SER_SLOT_W / 2.0)
+SER_SLOT_Z = USB_SLOT_Z
 RING_B_FLAT_X = 30.93          # case ring B has a flat face toward the board at this X, Y <= -24, Z <= 1
 RING_B_FREE_Y = -22.5          # in front of this Y the case is clear right of the board (up to X 38)
 # Inner face of the slanted left wall (X as a function of Y) plus the rear

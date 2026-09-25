@@ -34,10 +34,10 @@ Deliverables:
 ## 1. Case modification
 
 - **Fill** the old jack hole: a Ø6.6 cylinder on the hole axis (X 5.10,
-  Z −1.60) spanning the wall, Y −36.02…−34.10. Ø6.6 covers the ≈Ø6.4
-  chamfered mouth; the outer end stays 0.05 mm inside the outer face so the
-  fill never stands proud. (The implementation checks that the outer face is
-  flat over the plug's footprint.)
+  Z −1.60) spanning the wall, Y −35.92…−34.10. Ø6.6 covers the ≈Ø6.4
+  chamfered mouth; the outer end stays 0.15 mm inside the outer face so the
+  fill never stands proud: the face curves into the corner and is at Y −35.95
+  at the plug's left edge, X 1.8 (measured by ray-casting; checked by a test).
 - **Cut** the new slot, same shape as the RP2040 slot: 9.82 × 3.62,
   full-radius ends, straight along Y through the wall (cutter Y −37.5…−33.5).
   Centre **X 6.60, Z −1.25** → X 1.69…11.51, Z −3.06…0.56. It clears the
