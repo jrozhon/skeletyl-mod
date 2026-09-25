@@ -36,7 +36,7 @@ class ShapeTest(unittest.TestCase):
     def test_extents(self):
         bb = self.shape.BoundBox
         self.assertAlmostEqual(bb.YMin, rp.PLATE_REAR_Y, places=4)
-        self.assertAlmostEqual(bb.ZMax, rp.RAIL_TOP_Z, places=4)
+        self.assertAlmostEqual(bb.ZMax, rp.PCB_Z0, places=4)
         self.assertAlmostEqual(bb.XMin, rp.LEFT_EDGE[0][0], places=4)
         self.assertAlmostEqual(bb.XMax, rp.RING_B[0] + rp.RING_PAD_R, places=4)
 
@@ -77,16 +77,12 @@ class ShapeTest(unittest.TestCase):
     # -- case clearances (numbers measured from the V4 STL) ---------------
     def test_clear_of_the_rear_wall(self):
         self.assertGreaterEqual(rp.PLATE_REAR_Y, rp.WALL_INNER_Y + 0.3)
-        # The board and jack reach into the wall recess, which is free from Z -5.5 to 3.
+        # The board reaches into the wall recess, which is free from Z -5.5 to 3.
         self.assertGreater(rp.BOARD_Y0, rp.WALL_RECESS_Y + 0.2)
-        self.assertGreater(rp.JACK_Y0, rp.WALL_RECESS_Y)
-        self.assertLess(rp.RAIL_TOP_Z, 3.0)
+        self.assertLess(rp.PCB_Z1, 3.0)
 
     def test_clear_of_ring_b(self):
-        # Right ledge (all Y) stays off ring B's flat face; right rail starts in front of the blob.
-        self.assertLessEqual(rp.RAIL_X1, rp.RING_B_FLAT_X - 0.5)
-        self.assertTrue(inside(self.shape, rp.RAIL_X1 + rp.RAIL_T / 2, rp.RING_B_FREE_Y + 0.5, rp.PLATE_Z1 + 1.0))
-        self.assertFalse(inside(self.shape, rp.RAIL_X1 + rp.RAIL_T / 2, rp.RING_B_FREE_Y - 0.5, rp.PLATE_Z1 + 1.0))
+        self.assertLessEqual(rp.LEDGE_X1, rp.RING_B_FLAT_X - 0.5)
         self.assertLessEqual(rp.BOARD_X1, rp.RING_B_FLAT_X - 0.5)
 
     def test_clipped_along_the_left_wall(self):
@@ -114,15 +110,6 @@ class ShapeTest(unittest.TestCase):
             self.assertTrue(inside(self.shape, x, rp.PLATE_REAR_Y + 0.2, rp.PCB_Z0 - EPS))  # full length
         self.assertFalse(inside(self.shape, rp.BOARD_X0 + rp.LEDGE_W, y, rp.PCB_Z0 - EPS))
 
-    def test_rails_and_front_stop_stand_above_the_pcb(self):
-        y = rp.BOARD_Y1 - 2.0
-        for x in (rp.RAIL_X0 - rp.RAIL_T / 2, rp.RAIL_X1 + rp.RAIL_T / 2):
-            self.assertTrue(inside(self.shape, x, y, rp.RAIL_TOP_Z - EPS))
-            self.assertFalse(inside(self.shape, x, y, rp.RAIL_TOP_Z + EPS))
-        self.assertTrue(inside(self.shape, rp.BOARD_CX, rp.STOP_Y0 + rp.RAIL_T / 2, rp.RAIL_TOP_Z - EPS))
-        self.assertFalse(inside(self.shape, rp.BOARD_CX, rp.STOP_Y0 - EPS, rp.PCB_Z1))
-        self.assertGreaterEqual(rp.RAIL_TOP_Z, rp.PCB_Z1 + 1.0)
-
     def test_window_under_the_board_is_open_to_the_rear(self):
         for y in (rp.PLATE_REAR_Y + 0.1, rp.BOARD_Y0 + 3.0, rp.BOARD_Y1 - rp.WINDOW_FRONT_GAP - 0.1):
             self.assertFalse(inside(self.shape, rp.BOARD_CX, y, rp.PLATE_Z1 - 1.0), y)
@@ -133,45 +120,53 @@ class ShapeTest(unittest.TestCase):
     def test_components_clear_the_plate(self):
         self.assertGreaterEqual(rp.USB_Z0 - rp.PLATE_Z1, 0.5)
 
-    # -- jack pocket ------------------------------------------------------
-    def test_jack_axis_matches_the_case_hole(self):
-        self.assertAlmostEqual(rp.JACK_AXIS_Z, rp.JACK_HOLE_Z)
-        self.assertLess(rp.JACK_NOSE_D, rp.JACK_HOLE_D)
-        self.assertLessEqual(rp.JACK_Y0 - rp.JACK_NOSE_L, rp.WALL_OUTER_Y + 0.5)
-        # pocket floor below the plate top, but a sensible floor remains
-        self.assertGreater(rp.PLATE_Z1 - rp.JACK_FLOOR_Z, 0.0)
-        self.assertGreaterEqual(rp.JACK_FLOOR_Z - rp.PLATE_Z0, 1.0)
+    def test_only_ledges_and_pedestal_stand_above_the_plate(self):
+        ledges = ((rp.LEDGE_X0, rp.LEDGE_X0 + rp.LEDGE_W), (rp.LEDGE_X1 - rp.LEDGE_W, rp.LEDGE_X1))
+        for x in [rp.LEFT_EDGE[0][0] + 0.25 + 0.5 * i for i in range(80)]:
+            for y in [rp.PLATE_REAR_Y + 0.25 + 0.5 * j for j in range(60)]:
+                if not inside(self.shape, x, y, rp.PLATE_Z1 + 0.3):
+                    continue
+                in_ledge = any(a <= x <= b for a, b in ledges) and y <= rp.LEDGE_Y1
+                in_pedestal = rp.SER_X0 <= x <= rp.SER_X1 and y <= rp.SER_SHELL_Y1
+                self.assertTrue(in_ledge or in_pedestal, (x, y))
 
-    def test_jack_pocket_floor_between_the_slots(self):
-        y = rp.JACK_Y0 + 5.0
-        for yy in (y, rp.JACK_Y1 - 0.3):
-            self.assertTrue(inside(self.shape, rp.JACK_AXIS_X, yy, rp.JACK_FLOOR_Z - EPS))
-            self.assertFalse(inside(self.shape, rp.JACK_AXIS_X, yy, rp.JACK_FLOOR_Z + EPS))
-        # pocket walls just outside the body, in front of the leg slots
-        yw = rp.JACK_POCKET_Y1 - 0.3
-        for x in (rp.JACK_X0 - rp.JACK_POCKET_CLEAR - EPS, rp.JACK_X1 + rp.JACK_POCKET_CLEAR + EPS):
-            self.assertTrue(inside(self.shape, x, yw, rp.PLATE_Z1 - EPS), x)
-        self.assertTrue(inside(self.shape, rp.JACK_AXIS_X, rp.JACK_POCKET_Y1 + EPS, rp.PLATE_Z1 - EPS))
-        self.assertFalse(inside(self.shape, rp.JACK_AXIS_X, rp.JACK_POCKET_Y1 - EPS, rp.PLATE_Z1 - EPS))
+    def test_old_jack_features_gone(self):
+        # plate is full thickness where the pocket and the leg slots were
+        for x in (rp.JACK_AXIS_X - 2.6, rp.JACK_AXIS_X, rp.JACK_AXIS_X + 2.6):
+            self.assertTrue(inside(self.shape, x, -26.0, rp.PLATE_Z0 + 0.1), x)
+            self.assertTrue(inside(self.shape, x, -26.0, rp.PLATE_Z1 - 0.1), x)
 
-    def test_leg_slots_on_both_sides_open_at_the_rear(self):
-        for xs, out in ((rp.JACK_X0, -1), (rp.JACK_X1, 1)):
-            for x in (xs + out * (rp.JACK_LEG_OUT - 0.1), xs, xs - out * (rp.JACK_LEG_IN - 0.1)):
-                for y in (rp.PLATE_REAR_Y + 0.1, rp.JACK_Y0 + rp.JACK_LEG_Y0 + rp.JACK_LEG_L - 0.1):
-                    self.assertFalse(inside(self.shape, x, y, rp.PLATE_Z1 - 1.0), (x, y))
-            self.assertTrue(inside(self.shape, xs, rp.JACK_Y0 + rp.JACK_LEG_Y0 + rp.JACK_LEG_L + 0.1,
-                                   rp.PLATE_Z1 - 1.0))
+    # -- USB-C serial breakout -----------------------------------------------
+    def test_serial_shell_centred_in_the_new_slot(self):
+        self.assertAlmostEqual(rp.SER_CZ, sum(rp.SER_SLOT_Z) / 2)
+        self.assertAlmostEqual(rp.SER_CX, sum(rp.SER_SLOT_X) / 2)
+        self.assertGreater(rp.SER_Z0, rp.SER_SLOT_Z[0])
+        self.assertLess(rp.SER_Z0 + rp.SER_H, rp.SER_SLOT_Z[1])
+        self.assertGreater(rp.SER_X0, rp.SER_SLOT_X[0])
+        self.assertLess(rp.SER_X1, rp.SER_SLOT_X[1])
+        self.assertLess(rp.SER_FACE_Y, rp.WALL_RECESS_Y)
+        self.assertGreater(rp.SER_FACE_Y, rp.WALL_OUTER_Y)
 
-    def test_ribs_and_end_stop(self):
-        y = rp.JACK_Y1 - 1.0
-        for x in (rp.RIB_L_X0 + rp.RIB_T / 2, rp.RIB_R_X0 + 0.5):
-            self.assertTrue(inside(self.shape, x, y, rp.RIB_TOP_Z - EPS), x)
-            self.assertFalse(inside(self.shape, x, y, rp.RIB_TOP_Z + EPS), x)
-        self.assertTrue(inside(self.shape, rp.JACK_AXIS_X, rp.JACK_STOP_Y0 + rp.RIB_T / 2, rp.RIB_TOP_Z - EPS))
-        self.assertFalse(inside(self.shape, rp.JACK_AXIS_X, rp.JACK_STOP_Y0 - EPS, rp.PLATE_Z1 + 1.0))
-        # the right rib runs into the board's left rail: no gap between them
-        self.assertTrue(inside(self.shape, rp.RIB_R_X1 - EPS, y, rp.RIB_TOP_Z - EPS))
-        self.assertTrue(inside(self.shape, rp.RIB_R_X1 + EPS, y, rp.RIB_TOP_Z - EPS))
+    def test_serial_slot_clear_of_the_corner_and_the_usb_slot(self):
+        self.assertGreater(rp.SER_SLOT_X[0], rp.CORNER_LUMP_X)
+        self.assertGreaterEqual(rp.USB_SLOT_X[0] - rp.SER_SLOT_X[1], 3.0)   # web between the slots
+
+    def test_serial_shell_clearances(self):
+        self.assertGreaterEqual(rp.SER_X0 - rp.CORNER_LUMP_X, 0.4)
+        self.assertGreaterEqual(rp.LEDGE_X0 - rp.SER_X1, 0.4)
+
+    def test_pedestal_sets_the_shell_height(self):
+        self.assertGreaterEqual(rp.SER_Z0 - rp.PLATE_Z1, 0.5)
+        for y in (rp.PLATE_REAR_Y + 0.2, rp.SER_SHELL_Y1 - 0.2):
+            self.assertTrue(inside(self.shape, rp.SER_CX, y, rp.SER_Z0 - EPS), y)
+            self.assertFalse(inside(self.shape, rp.SER_CX, y, rp.SER_Z0 + EPS), y)
+        self.assertFalse(inside(self.shape, rp.SER_CX, rp.SER_SHELL_Y1 + EPS, rp.PLATE_Z1 + EPS))
+
+    def test_serial_pcb_tail_is_free(self):
+        y = (rp.SER_SHELL_Y1 + rp.SER_PCB_Y1) / 2
+        for x in (rp.SER_CX - rp.SER_PCB_W / 2 + 0.1, rp.SER_CX, rp.SER_CX + rp.SER_PCB_W / 2 - 0.1):
+            self.assertFalse(inside(self.shape, x, y, rp.PLATE_Z1 + EPS), x)
+            self.assertFalse(inside(self.shape, x, y, rp.SER_CZ), x)
 
 
 class ExportTest(unittest.TestCase):

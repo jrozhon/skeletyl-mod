@@ -1,9 +1,11 @@
-"""Platform for a Waveshare RP2040-Zero + PJ-320A TRRS jack in a Skeletyl V4
-case, replacing the Splinktegrated PCB.
+"""Platform for a Waveshare RP2040-Zero + a mid-mount USB-C breakout (the
+half-to-half serial link) in a Skeletyl V4 case, replacing the Splinktegrated
+PCB. The case's TRRS hole is replaced by a USB-C slot: see case_usb_serial.py.
 
 A flat plate screwed from below against the underside of the case's two M4
-controller rings. The jack lies on the plate; the RP2040-Zero (components
-down) rests on two ledges above it so its USB-C sits in the case slot.
+controller rings. The RP2040-Zero (components down) rests on two ledges so
+its USB-C sits in the case slot; the breakout's shell sits on a low pedestal
+in the new slot. Both are fixed with hot glue.
 
 Frame: origin = centre of case ring A, X toward ring B, Y toward the user
 (rear wall at negative Y), Z up with Z = 0 on the ring tops. The rings'
@@ -80,32 +82,22 @@ USB_OVERHANG = 1.3             # shell protrudes past the PCB edge by this
 USB_RECESS = 1.0               # shell front face this far behind the wall's outer face
 BOARD_X_SHIFT = 0.0            # nudge the board sideways relative to the slot
 BOARD_Z_SHIFT = 0.0            # nudge the board up/down (the shell has 0.2 mm each way in the slot)
-BOARD_CLEAR = 0.3              # side clearance PCB edge -> rail
+BOARD_CLEAR = 0.3              # PCB side/front edge -> ledge outer edge / ledge end
 LEDGE_W = 1.2                  # ledge walls under the long PCB edges (their inner 0.9 mm carry the PCB)
-RAIL_T = 1.5                   # rails outside the ledges, and the front stop
-RAIL_ABOVE_PCB = 1.0           # rails stand this far above the PCB top (glue here)
+PLATE_MARGIN = 1.5             # plate beyond the right ledge and in front of the ledges (rev. 2 outline)
 WINDOW_INSET = 1.5             # floor window inset from the PCB side edges
 WINDOW_FRONT_GAP = 2.0         # floor window ends this far before the PCB front edge
 
 # ---------------------------------------------------------------------------
-# PJ-320A TRRS jack, lying in a shallow pocket in the plate top
+# USB-C serial breakout: mid-mount receptacle, PCB through the shell's middle
 # ---------------------------------------------------------------------------
-JACK_BODY_W = 6.0              # body width (X)
-JACK_BODY_L = 12.0             # body length (Y), nose excluded
-JACK_BODY_H = 5.0              # body height
-JACK_AXIS_H = 2.5              # barrel axis above the mounting face
-JACK_NOSE_D = 5.0              # nose (barrel) diameter
-JACK_NOSE_L = 2.0              # nose length
-JACK_FACE_GAP = 0.2            # body front face to the recessed wall face
-JACK_POCKET_CLEAR = 0.2        # pocket clearance per side and behind the body
-JACK_LEG_IN = 1.4              # leg slot reaches this far inside each body side face ...
-JACK_LEG_OUT = 0.6             # ... and this far outside it (legs may be either)
-JACK_LEG_Y0 = 1.0              # leg slot starts this far behind the body front face
-JACK_LEG_L = 10.0              # leg slot length (Y)
-RIB_T = 1.5                    # jack ribs / end stop thickness
-RIB_H = 2.5                    # jack ribs / end stop height above the plate
-RIB_L_Y0 = -29.6               # left rib starts here (the left wall is too close further back)
-JACK_STOP_GAP = 0.3            # end stop behind the body rear face
+SER_W = 8.94                   # shell width (X)
+SER_H = 3.2                    # shell height (the slot is 3.62: 0.21 mm each way)
+SER_SHELL_L = 9.0              # shell length (Y)
+SER_PCB_W = 9.0                # breakout PCB width
+SER_PCB_L = 5.0                # PCB tail behind the shell (pads U, D+, D-, G)
+SER_PCB_T = 0.8                # PCB thickness (thinner is fine: the tail is free)
+SER_RECESS = 1.0               # shell front face this far behind the wall's outer face
 
 # ---------------------------------------------------------------------------
 # Derived values (do not edit)
@@ -119,33 +111,26 @@ USB_CENTER_Z = (USB_SLOT_Z[0] + USB_SLOT_Z[1]) / 2.0
 USB_Z0 = USB_CENTER_Z - USB_H / 2.0 + BOARD_Z_SHIFT   # shell underside
 PCB_Z0 = USB_Z0 + USB_H                      # component side (faces down) = ledge top
 PCB_Z1 = PCB_Z0 + BOARD_T                    # flat solder side (faces up)
-RAIL_TOP_Z = PCB_Z1 + RAIL_ABOVE_PCB
 BOARD_CX = (USB_SLOT_X[0] + USB_SLOT_X[1]) / 2.0 + BOARD_X_SHIFT
 BOARD_X0 = BOARD_CX - BOARD_W / 2.0
 BOARD_X1 = BOARD_CX + BOARD_W / 2.0
 USB_FACE_Y = WALL_OUTER_Y + USB_RECESS
 BOARD_Y0 = USB_FACE_Y + USB_OVERHANG         # rear (USB) edge
 BOARD_Y1 = BOARD_Y0 + BOARD_L                # front edge
-RAIL_X0 = BOARD_X0 - BOARD_CLEAR             # left rail inner face / left ledge outer edge
-RAIL_X1 = BOARD_X1 + BOARD_CLEAR             # right rail inner face / right ledge outer edge
-STOP_Y0 = BOARD_Y1 + BOARD_CLEAR             # front stop inner face
-STOP_Y1 = STOP_Y0 + RAIL_T
-PLATE_FRONT_Y = STOP_Y1
-PLATE_RIGHT_X = RAIL_X1 + RAIL_T
+LEDGE_X0 = BOARD_X0 - BOARD_CLEAR            # left ledge outer edge
+LEDGE_X1 = BOARD_X1 + BOARD_CLEAR            # right ledge outer edge
+LEDGE_Y1 = BOARD_Y1 + BOARD_CLEAR            # ledges end here
+PLATE_FRONT_Y = LEDGE_Y1 + PLATE_MARGIN
+PLATE_RIGHT_X = LEDGE_X1 + PLATE_MARGIN
 
-JACK_X0 = JACK_AXIS_X - JACK_BODY_W / 2.0
-JACK_X1 = JACK_AXIS_X + JACK_BODY_W / 2.0
-JACK_Y0 = WALL_RECESS_Y + JACK_FACE_GAP      # body front face
-JACK_Y1 = JACK_Y0 + JACK_BODY_L              # body rear face
-JACK_FLOOR_Z = JACK_HOLE_Z - JACK_AXIS_H     # pocket floor: puts the barrel on the hole axis
-JACK_AXIS_Z = JACK_FLOOR_Z + JACK_AXIS_H
-JACK_POCKET_Y1 = JACK_Y1 + JACK_POCKET_CLEAR
-RIB_TOP_Z = PLATE_Z1 + RIB_H
-RIB_L_X0 = JACK_X0 - JACK_LEG_OUT - RIB_T    # left rib, outside the left leg slot
-RIB_R_X0 = JACK_X1 + JACK_LEG_OUT            # right rib, outside the right slot ...
-RIB_R_X1 = RAIL_X0 - RAIL_T                  # ... merged into the board's left rail
-JACK_STOP_Y0 = JACK_Y1 + JACK_STOP_GAP
-
+SER_CX = SER_SLOT_CX
+SER_CZ = (SER_SLOT_Z[0] + SER_SLOT_Z[1]) / 2.0
+SER_X0 = SER_CX - SER_W / 2.0
+SER_X1 = SER_CX + SER_W / 2.0
+SER_Z0 = SER_CZ - SER_H / 2.0                # shell underside = pedestal top
+SER_FACE_Y = WALL_OUTER_Y + SER_RECESS       # shell front face
+SER_SHELL_Y1 = SER_FACE_Y + SER_SHELL_L      # shell rear = pedestal front
+SER_PCB_Y1 = SER_SHELL_Y1 + SER_PCB_L        # end of the PCB tail
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -180,6 +165,11 @@ def fuse_all(shapes):
 # ---------------------------------------------------------------------------
 # Plate
 # ---------------------------------------------------------------------------
+def make_keep():
+    """Everything right of the left-wall outline and in front of the rear edge."""
+    return prism(LEFT_EDGE + ((100.0, PLATE_REAR_Y), (100.0, 50.0)), -20.0, 20.0)
+
+
 def make_plate():
     """Body + ring pads, clipped along the left wall, with the board window."""
     ax, ay = RING_A
@@ -189,9 +179,7 @@ def make_plate():
     neck_a = box(LEFT_EDGE[0][0], ax + RING_PAD_R, RING_A_PAD_Y0, ay, PLATE_Z0, PLATE_Z1)
     pad_b = cyl(bx, by, 2 * RING_PAD_R, PLATE_Z0, PLATE_Z1)
     plate = fuse_all([body, pad_a, neck_a, pad_b])
-    # Everything right of the left edge and in front of the rear edge.
-    keep = prism(LEFT_EDGE + ((100.0, PLATE_REAR_Y), (100.0, 50.0)), PLATE_Z0 - 1, PLATE_Z1 + 1)
-    return plate.common(keep).cut(make_window())
+    return plate.common(make_keep()).cut(make_window())
 
 
 def make_window():
@@ -210,46 +198,19 @@ def make_screw_cutters():
 
 
 # ---------------------------------------------------------------------------
-# Board frame
+# Supports
 # ---------------------------------------------------------------------------
-def make_board_frame():
-    """Ledges under the long PCB edges, rails outside them, front stop."""
+def make_ledges():
+    """Ledges under the long PCB edges, plate to the PCB's component side."""
     return fuse_all([
-        box(RAIL_X0, RAIL_X0 + LEDGE_W, PLATE_REAR_Y, STOP_Y0, PLATE_Z0, PCB_Z0),
-        box(RAIL_X1 - LEDGE_W, RAIL_X1, PLATE_REAR_Y, STOP_Y0, PLATE_Z0, PCB_Z0),
-        box(RAIL_X0 - RAIL_T, RAIL_X0, PLATE_REAR_Y, STOP_Y1, PLATE_Z0, RAIL_TOP_Z),
-        box(RAIL_X1, RAIL_X1 + RAIL_T, RING_B_FREE_Y, STOP_Y1, PLATE_Z0, RAIL_TOP_Z),
-        box(RAIL_X0 - RAIL_T, RAIL_X1 + RAIL_T, STOP_Y0, STOP_Y1, PLATE_Z0, RAIL_TOP_Z),
+        box(LEDGE_X0, LEDGE_X0 + LEDGE_W, PLATE_REAR_Y, LEDGE_Y1, PLATE_Z0, PCB_Z0),
+        box(LEDGE_X1 - LEDGE_W, LEDGE_X1, PLATE_REAR_Y, LEDGE_Y1, PLATE_Z0, PCB_Z0),
     ])
 
 
-# ---------------------------------------------------------------------------
-# Jack pocket
-# ---------------------------------------------------------------------------
-def make_jack_ribs():
-    """Side ribs outside the leg slots and the end stop behind the body."""
-    return fuse_all([
-        box(RIB_L_X0, RIB_L_X0 + RIB_T, RIB_L_Y0, JACK_STOP_Y0 + RIB_T, PLATE_Z0, RIB_TOP_Z),
-        box(RIB_R_X0, RIB_R_X1, PLATE_REAR_Y, JACK_STOP_Y0 + RIB_T, PLATE_Z0, RIB_TOP_Z),
-        box(RIB_L_X0, RIB_R_X1, JACK_STOP_Y0, JACK_STOP_Y0 + RIB_T, PLATE_Z0, RIB_TOP_Z),
-    ])
-
-
-def make_jack_pocket():
-    """Shallow pocket in the plate top: sets the jack height, guides the body."""
-    return box(JACK_X0 - JACK_POCKET_CLEAR, JACK_X1 + JACK_POCKET_CLEAR,
-               PLATE_REAR_Y - 1.0, JACK_POCKET_Y1, JACK_FLOOR_Z, PLATE_Z1 + 1.0)
-
-
-def make_leg_slots():
-    """One slot through the plate along each body side, open at the rear."""
-    y0 = JACK_Y0 + JACK_LEG_Y0
-    return fuse_all([
-        box(JACK_X0 - JACK_LEG_OUT, JACK_X0 + JACK_LEG_IN, PLATE_REAR_Y - 1.0, y0 + JACK_LEG_L,
-            PLATE_Z0 - 1.0, PLATE_Z1 + 1.0),
-        box(JACK_X1 - JACK_LEG_IN, JACK_X1 + JACK_LEG_OUT, PLATE_REAR_Y - 1.0, y0 + JACK_LEG_L,
-            PLATE_Z0 - 1.0, PLATE_Z1 + 1.0),
-    ])
+def make_pedestal():
+    """Block under the serial USB-C shell: puts it at the slot height."""
+    return box(SER_X0, SER_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, SER_Z0).common(make_keep())
 
 
 # ---------------------------------------------------------------------------
@@ -257,21 +218,19 @@ def make_leg_slots():
 # ---------------------------------------------------------------------------
 def build():
     """Return the finished platform as a single solid."""
-    shape = make_plate().fuse(make_board_frame()).fuse(make_jack_ribs())
-    shape = shape.cut(make_jack_pocket()).cut(make_leg_slots()).cut(make_screw_cutters())
-    return shape.removeSplitter()
+    shape = make_plate().fuse(make_ledges()).fuse(make_pedestal())
+    return shape.cut(make_screw_cutters()).removeSplitter()
 
 
 def make_components():
     """The parts the platform holds, as one compound (for checks and drawings):
-    PCB, USB-C shell, jack body and nose, at their design positions."""
-    nose = Part.makeCylinder(JACK_NOSE_D / 2.0, JACK_NOSE_L, Vector(JACK_AXIS_X, JACK_Y0, JACK_AXIS_Z),
-                             Vector(0, -1, 0))
+    RP2040 PCB and USB-C shell, serial USB-C shell and its PCB tail."""
     return Part.makeCompound([
         box(BOARD_X0, BOARD_X1, BOARD_Y0, BOARD_Y1, PCB_Z0, PCB_Z1),
         box(BOARD_CX - USB_W / 2, BOARD_CX + USB_W / 2, USB_FACE_Y, USB_FACE_Y + USB_L, USB_Z0, PCB_Z0),
-        box(JACK_X0, JACK_X1, JACK_Y0, JACK_Y1, JACK_FLOOR_Z, JACK_FLOOR_Z + JACK_BODY_H),
-        nose,
+        box(SER_X0, SER_X1, SER_FACE_Y, SER_SHELL_Y1, SER_Z0, SER_Z0 + SER_H),
+        box(SER_CX - SER_PCB_W / 2, SER_CX + SER_PCB_W / 2, SER_SHELL_Y1, SER_PCB_Y1,
+            SER_CZ - SER_PCB_T / 2, SER_CZ + SER_PCB_T / 2),
     ])
 
 
@@ -310,8 +269,8 @@ def main():
     bb = shape.BoundBox
     print("bbox X %.2f..%.2f  Y %.2f..%.2f  Z %.2f..%.2f"
           % (bb.XMin, bb.XMax, bb.YMin, bb.YMax, bb.ZMin, bb.ZMax))
-    print("USB-C shell Z %.2f..%.2f in slot %.2f..%.2f; jack pocket %.2f deep; head bottom Z %.2f (bottom plate %.2f)"
-          % (USB_Z0, PCB_Z0, USB_SLOT_Z[0], USB_SLOT_Z[1], PLATE_Z1 - JACK_FLOOR_Z, HEAD_BOTTOM_Z, BOTTOM_PLATE_Z))
+    print("USB-C shells Z %.2f..%.2f (RP2040) and %.2f..%.2f (serial) in slots %.2f..%.2f; head bottom Z %.2f (bottom plate %.2f)"
+          % (USB_Z0, PCB_Z0, SER_Z0, SER_Z0 + SER_H, USB_SLOT_Z[0], USB_SLOT_Z[1], HEAD_BOTTOM_Z, BOTTOM_PLATE_Z))
     if FreeCAD.GuiUp:
         doc = FreeCAD.ActiveDocument or FreeCAD.newDocument(NAME)
         obj = doc.addObject("Part::Feature", "Platform")
