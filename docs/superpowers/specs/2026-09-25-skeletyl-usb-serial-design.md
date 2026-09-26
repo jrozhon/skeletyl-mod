@@ -92,6 +92,11 @@ ledge), and the right stop rises to the corner stops' height (Z 1.85) and
 reaches to 0.1 mm off the RP2040's left edge (`BOARD_SIDE_GAP`), at
 Y −20.27…−17.77 (13.5…16 mm from the board's USB edge).
 
+Second print (2026-09-26): still loose sideways and the shell sat too deep.
+`SER_SIDE_GAP` 0.1 → 0.05 and `SER_RECESS` 1.0 → 0.8; the pedestal and all
+serial stops (including the raised one at the RP2040) move 0.2 mm toward
+the wall with it, now Y −20.47…−17.97.
+
 Parameters: `SER_W`, `SER_H`, `SER_SHELL_L`, `SER_L`, `SER_PCB_W`,
 `SER_PCB_T`, `SER_CENTER_X`, `SER_RECESS`; the new slot position lives in
 one place shared by both scripts.

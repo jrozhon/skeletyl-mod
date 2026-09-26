@@ -141,6 +141,9 @@ class ShapeTest(unittest.TestCase):
                                   and rp.SER_PCB_Y1 - rp.CORNER_SIDE_L <= y <= rp.SER_STOP_Y1)
                 self.assertTrue(in_ledge or in_pedestal or in_corner or in_serial_stop, (x, y))
 
+    def test_serial_shell_face_0_8_behind_the_wall(self):
+        self.assertAlmostEqual(rp.SER_FACE_Y - rp.WALL_OUTER_Y, 0.8)
+
     def test_serial_breakout_overall_length(self):
         self.assertAlmostEqual(rp.SER_PCB_Y1 - rp.SER_FACE_Y, rp.SER_L)
 
@@ -161,8 +164,8 @@ class ShapeTest(unittest.TestCase):
 
     def test_serial_side_arms_locate_the_pcb_sideways(self):
         y = rp.SER_PCB_Y1 - 1.0
-        self.assertAlmostEqual(rp.SER_PCB_X0 - rp.SER_ARM_X0, 0.1)
-        self.assertAlmostEqual(rp.SER_ARM_X1 - rp.SER_PCB_X1, 0.1)
+        self.assertAlmostEqual(rp.SER_PCB_X0 - rp.SER_ARM_X0, 0.05)
+        self.assertAlmostEqual(rp.SER_ARM_X1 - rp.SER_PCB_X1, 0.05)
         for x_arm, x_gap in ((rp.SER_ARM_X0 - rp.CORNER_T / 2, rp.SER_ARM_X0 + rp.SER_SIDE_GAP / 2),
                              (rp.SER_ARM_X1 + EPS, rp.SER_ARM_X1 - rp.SER_SIDE_GAP / 2)):
             self.assertTrue(inside(self.shape, x_arm, y, rp.SER_STOP_TOP_Z - EPS), x_arm)
