@@ -97,6 +97,9 @@ Second print (2026-09-26): still loose sideways and the shell sat too deep.
 serial stops (including the raised one at the RP2040) move 0.2 mm toward
 the wall with it, now Y −20.47…−17.97.
 
+Then, at the user's request, `SER_SIDE_GAP` = 0 (line-to-line with the
+9.8 mm datasheet width).
+
 Parameters: `SER_W`, `SER_H`, `SER_SHELL_L`, `SER_L`, `SER_PCB_W`,
 `SER_PCB_T`, `SER_CENTER_X`, `SER_RECESS`; the new slot position lives in
 one place shared by both scripts.

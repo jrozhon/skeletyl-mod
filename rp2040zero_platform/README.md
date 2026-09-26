@@ -40,7 +40,7 @@ the bottom plate, the ledges, corner stops and pedestal point up toward the swit
    shell on the pedestal, push it into the new slot until its face is
    ~0.8 mm inside the wall, and hot-glue the shell to the pedestal. The PCB
    tail drops between two L-shaped stops behind its end (0.2 mm off the
-   end, 0.05 mm off each side, the middle open for the wires); they take the
+   end, touching its sides, the middle open for the wires); they take the
    push when you plug a cable in.
 2. **Board.** Solder the wires to the RP2040-Zero's castellated pads first.
    Place it components down, USB-C toward the wall, long edges on the two
@@ -62,7 +62,7 @@ the bottom plate, the ledges, corner stops and pedestal point up toward the swit
 | `CORNER_T` / `CORNER_GAP` | 2.5 / 0.2 | Corner stops at the board's front: arm thickness and gap to the PCB edges (the board has 0.33 mm to the wall behind it) |
 | `SER_H` / `SER_W` | 3.2 / 8.94 | Serial shell; sets the pedestal height. The slot has 0.21 mm each way vertically, 0.44 sideways |
 | `SER_L` / `SER_PCB_W` | 14.6 / 9.8 | Breakout overall length and PCB width (datasheet); they place the stops behind the PCB (0.2 mm) and beside it, so check your part |
-| `SER_SIDE_GAP` / `BOARD_SIDE_GAP` | 0.05 / 0.1 | Breakout PCB sides → its stops' side arms (0.2, then 0.1 printed loose); RP2040 left edge → the raised right serial stop |
+| `SER_SIDE_GAP` / `BOARD_SIDE_GAP` | 0.0 / 0.1 | Breakout PCB sides → its stops' side arms, line-to-line (0.2 and 0.1 printed loose); RP2040 left edge → the raised right serial stop |
 | `SER_SHELL_L` | 9.0 | Shell length; the pedestal ends under the shell's rear |
 | `SER_RECESS` / `USB_RECESS` | 0.8 / 1.0 | Shell faces behind the wall's outer face (wall is 2 mm); the serial shell sat too deep at 1.0 |
 | `CSK_ANGLE` / `CSK_DEPTH` | 90 / 1.2 | Countersink for the conical heads: Ø6.9 at the underside down to the Ø4.5 hole. A full-depth seat does not fit the 2 mm plate, so the head hangs ≤ 1.3 mm below it (0.95 mm clear of the bottom plate) |

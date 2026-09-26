@@ -104,7 +104,7 @@ SER_SHELL_L = 9.0              # shell length (Y); only sets where the pedestal 
 SER_PCB_W = 9.8                # breakout PCB width (datasheet), centred on the shell
 SER_PCB_T = 0.8                # PCB thickness (thinner is fine: the tail is free)
 SER_RECESS = 0.8               # shell front face this far behind the wall's outer face (1.0 sat too deep)
-SER_SIDE_GAP = 0.05            # breakout PCB side edges -> side arms (0.2, then 0.1 each way printed loose)
+SER_SIDE_GAP = 0.0             # breakout PCB side edges -> side arms: line-to-line (0.2 and 0.1 each way printed loose)
 BOARD_SIDE_GAP = 0.1           # RP2040 PCB left edge -> the right serial stop, which rises to the board
 
 # ---------------------------------------------------------------------------
