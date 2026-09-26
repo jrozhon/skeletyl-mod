@@ -120,11 +120,21 @@ the flat (top) side and the wires bend away from the board.
 | 5V | serial breakout **U** | powers the other half through the link |
 | GND | serial breakout **G** | |
 | GP2 | *(flex build only, optional)* RGB **DIN** | hand-wired: leave free |
+| 3V3 | *(flex build only, optional)* RGB **VCC** | each half powers its own LEDs |
 
 - GP16 is the RP2040-Zero's on-board RGB LED. No wire is needed.
 - GP3–GP8, GP28 and GP29 are free.
+- **Plug USB into one half only.** On the Zero, the USB-C VBUS pins
+  connect straight to the 5V pad with no diode (Waveshare schematic). The
+  link joins both halves' 5V, so a second USB cable would connect two
+  supplies directly.
 - The link port carries 5 V. Only ever connect it half to half, never to a
   computer.
+- **RGB runs on 3.3 V**, as it did on the Splinktegrated. Powered from 5 V,
+  the LEDs would need a data signal of at least 3.5 V, and the Zero's
+  3.3 V output falls short of that. Each half's LEDs load only that half's
+  regulator: 18 LEDs at the firmware's brightness cap of 50/255 draw about
+  180 mA.
 
 ### Flex build: header pads to the RP2040-Zero
 
@@ -137,36 +147,28 @@ next to each pad.
 | 5-pad header | C3, X, C2, X, R1 | C3 → GP10, C2 → GP9, R1 → GP14; skip the two X pads (the second one is the unused 6th column) |
 | 6-pad header | R3, R2, C4, C5, C6, R4 | GP26, GP15, GP11, GP12, GP13, GP27 |
 | 4-pad header (C5, C4, R4, C2) | ribbon to the thumb PCB | leave as original |
-| VCC / GND / DIN (3 pads) | RGB in | only if you want RGB: 5V, GND, GP2 |
+| VCC / GND / DIN (3 pads) | RGB in | only if you want RGB: 3V3, GND, GP2 |
 
 ## 3. QMK
 
-The matrix is the same as QMK's `bastardkb/skeletyl`, whose
-`LAYOUT_split_3x5_3` works unchanged: matrix row 0–3 = R1–R4 and matrix
-column 0–4 = C2–C6. Starting point for `keyboard.json`:
+The firmware lives in the userspace repo (`~/qmk_userspace`, keymap
+`jrozhon`): targets `skeletyl_zero_jrozhon_lefthalf` and
+`skeletyl_zero_jrozhon_righthalf`. Both builds (hand-wired and flex) run
+the same two files. See that repo's README for building and flashing.
 
-```json
-{
-    "processor": "RP2040",
-    "bootloader": "rp2040",
-    "diode_direction": "ROW2COL",
-    "matrix_pins": {
-        "cols": ["GP9", "GP10", "GP11", "GP12", "GP13"],
-        "rows": ["GP14", "GP15", "GP26", "GP27"]
-    },
-    "split": {
-        "enabled": true,
-        "serial": {"driver": "vendor", "pin": "GP0"}
-    }
-}
-```
-
-Both halves are wired identically, so the firmware can't tell left from
-right by a pin. Add `#define EE_HANDS` to `config.h` and flash each half
-once with `qmk flash -bl uf2-split-left` and `-bl uf2-split-right`.
-
-On the flex build with RGB, add `"ws2812": {"pin": "GP2", "driver": "vendor"}`
-and reuse `bastardkb/skeletyl`'s `rgb_matrix` layout.
+- **Keymap:** unchanged. The matrix is the same as QMK's
+  `bastardkb/skeletyl` (matrix rows 0–3 = R1–R4, columns 0–4 = C2–C6), so
+  its `LAYOUT_split_3x5_3` and the shared `users/jrozhon/jrozhon.c` layers
+  work as they are. Diode direction is `ROW2COL`.
+- **Pins:** set in the keymap's `config.h` when `SKELETYL_RP2040_ZERO=yes`,
+  on top of `bastardkb/skeletyl/promicro` with `CONVERT_TO=rp2040_ce`.
+- **Master detection:** the converter senses USB power on GP19, which is
+  wired on the Splinktegrated but not on the Zero. The Zero build detects
+  the USB connection in software instead (`SPLIT_USB_DETECT`).
+- **Handedness:** both halves are wired identically, so it lives in
+  EEPROM (`EE_HANDS`). It is seeded on first boot by the left or right
+  file (`INIT_EE_HANDS_LEFT` / `_RIGHT`). Plain `-bl uf2-split-left`
+  cannot write it on the RP2040.
 
 ## Flex PCB check (2026-09-26)
 
