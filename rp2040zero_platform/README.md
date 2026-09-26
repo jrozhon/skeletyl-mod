@@ -23,12 +23,13 @@ too.
 
 ## Print
 
-- **Case:** `case_v4_103_usb_serial.stl` exactly like the original case
-  (mirror it in the slicer for the other half). The only change is the rear
-  wall: the round jack hole is filled and a 9.82 × 3.62 USB-C slot sits
-  next to the RP2040's.
+- **Case:** `case_v4_103_usb_serial.stl` exactly like the original case.
+  It is the **right** half; mirror it in the slicer for the left. The only
+  change is the rear wall: the round jack hole is filled and a 9.82 × 3.62
+  USB-C slot sits next to the RP2040's.
 - **Platform:** underside (the face with the two screw countersinks) on the
-  bed, no supports. 0.2 mm layers, 3 perimeters. Mirror for the other half.
+  bed, no supports. 0.2 mm layers, 3 perimeters. As modelled it fits the
+  right half; mirror it for the left.
 
 ## Assemble
 
