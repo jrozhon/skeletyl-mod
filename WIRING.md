@@ -198,17 +198,21 @@ Zero block of the keymap's `config.h`:
 
 ```c
 #    define SERIAL_USART_FULL_DUPLEX
-#    define SERIAL_USART_TX_PIN 0U // GP0, D+
 #    define SERIAL_USART_RX_PIN 1U // GP1, D−
 #    define SERIAL_USART_PIN_SWAP
 ```
+
+Transmit stays on GP0 (D+): QMK takes it from `SOFT_SERIAL_PIN`, which the
+block already sets. Defining `SERIAL_USART_TX_PIN` as well fails the build
+with a redefinition error.
 
 `SERIAL_USART_PIN_SWAP` is what keeps both halves wired identically. A
 straight USB-C cable joins D+ to D+ and D− to D−, so one half's transmit
 pin meets the other half's transmit pin. With this option set, the half
 with USB swaps its TX and RX when it starts (QMK's RP2040 serial driver,
 `serial_transport_driver_master_init`). Either half can still be the one
-with USB. The snippet is untested on hardware.
+with USB. The snippet compiles (checked 2026-09-26) but is untested on
+hardware.
 
 ## Flex PCB check (2026-09-26)
 
