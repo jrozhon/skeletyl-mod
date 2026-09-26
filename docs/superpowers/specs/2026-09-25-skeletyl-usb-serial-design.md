@@ -85,6 +85,13 @@ and a 9.8 mm wide PCB (tail 5.6 mm, PCB X 1.70…11.50, end at Y −20.47). Stop
 straight arm on the right that runs into the RP2040's left ledge, which is
 the right side guide (0.2 mm off the PCB). The middle stays open for wires.
 
+After the first print (2026-09-26) both parts moved sideways too easily:
+the breakout's side guides are now 0.1 mm off each PCB side
+(`SER_SIDE_GAP`; the right stop became an L too, its side arm fused to the
+ledge), and the right stop rises to the corner stops' height (Z 1.85) and
+reaches to 0.1 mm off the RP2040's left edge (`BOARD_SIDE_GAP`), at
+Y −20.27…−17.77 (13.5…16 mm from the board's USB edge).
+
 Parameters: `SER_W`, `SER_H`, `SER_SHELL_L`, `SER_L`, `SER_PCB_W`,
 `SER_PCB_T`, `SER_CENTER_X`, `SER_RECESS`; the new slot position lives in
 one place shared by both scripts.

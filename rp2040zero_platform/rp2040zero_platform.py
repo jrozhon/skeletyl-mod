@@ -104,6 +104,8 @@ SER_SHELL_L = 9.0              # shell length (Y); only sets where the pedestal 
 SER_PCB_W = 9.8                # breakout PCB width (datasheet), centred on the shell
 SER_PCB_T = 0.8                # PCB thickness (thinner is fine: the tail is free)
 SER_RECESS = 1.0               # shell front face this far behind the wall's outer face
+SER_SIDE_GAP = 0.1             # breakout PCB side edges -> side arms (rev. 3 print: 0.2 each way was loose)
+BOARD_SIDE_GAP = 0.1           # RP2040 PCB left edge -> the right serial stop, which rises to the board
 
 # ---------------------------------------------------------------------------
 # Derived values (do not edit)
@@ -147,6 +149,9 @@ SER_PCB_X1 = SER_CX + SER_PCB_W / 2.0
 SER_STOP_Y0 = SER_PCB_Y1 + CORNER_GAP        # stops behind the PCB end
 SER_STOP_Y1 = SER_STOP_Y0 + CORNER_T
 SER_STOP_TOP_Z = SER_CZ + SER_PCB_T / 2.0 + CORNER_ABOVE_PCB
+SER_ARM_X0 = SER_PCB_X0 - SER_SIDE_GAP       # left side arm inner face
+SER_ARM_X1 = SER_PCB_X1 + SER_SIDE_GAP       # right side arm inner face
+BOARD_STOP_X = BOARD_X0 - BOARD_SIDE_GAP     # right serial stop's face against the RP2040's left edge
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -242,16 +247,18 @@ def make_corner_stops():
 
 
 def make_serial_stops():
-    """Stops behind the breakout's PCB end, one at each corner (the middle
-    stays open for the wires): they take the cable's push. The left one is
-    an L that also guides the PCB's side; on the right the RP2040's left
-    ledge does that, so that arm just runs into the ledge."""
+    """An L behind each corner of the breakout's PCB end (the middle stays
+    open for the wires): the back arms take the cable's push, the side arms
+    locate the PCB sideways. The right L runs into the RP2040's left ledge
+    and rises to the board's height, where it locates the RP2040's left
+    edge."""
     y0, y1, top = SER_STOP_Y0, SER_STOP_Y1, SER_STOP_TOP_Z
-    x_in = SER_PCB_X0 - CORNER_GAP                  # left side arm inner face
+    x0, x1 = SER_ARM_X0, SER_ARM_X1
     return fuse_all([
-        box(x_in - CORNER_T, x_in, SER_PCB_Y1 - CORNER_SIDE_L, y1, PLATE_Z0, top),
-        box(x_in - CORNER_T, SER_PCB_X0 + CORNER_REACH, y0, y1, PLATE_Z0, top),
-        box(SER_PCB_X1 - CORNER_REACH, LEDGE_X0, y0, y1, PLATE_Z0, top),
+        box(x0 - CORNER_T, x0, SER_PCB_Y1 - CORNER_SIDE_L, y1, PLATE_Z0, top),
+        box(x0 - CORNER_T, SER_PCB_X0 + CORNER_REACH, y0, y1, PLATE_Z0, top),
+        box(x1, LEDGE_X0 + LEDGE_W / 2, SER_PCB_Y1 - CORNER_SIDE_L, y1, PLATE_Z0, top),
+        box(SER_PCB_X1 - CORNER_REACH, BOARD_STOP_X, y0, y1, PLATE_Z0, CORNER_TOP_Z),
     ])
 
 

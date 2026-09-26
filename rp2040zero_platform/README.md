@@ -38,14 +38,15 @@ the bottom plate, the ledges, corner stops and pedestal point up toward the swit
 1. **Serial breakout.** Solder four wires to U, D+, D−, G first. Set the
    shell on the pedestal, push it into the new slot until its face is
    ~1 mm inside the wall, and hot-glue the shell to the pedestal. The PCB
-   tail drops between two stops behind its end (0.2 mm off, the middle is
-   open for the wires) and the RP2040's left ledge on its right; they take
-   the push when you plug a cable in.
+   tail drops between two L-shaped stops behind its end (0.2 mm off the
+   end, 0.1 mm off each side, the middle open for the wires); they take the
+   push when you plug a cable in.
 2. **Board.** Solder the wires to the RP2040-Zero's castellated pads first.
    Place it components down, USB-C toward the wall, long edges on the two
    ledges: it drops between the two L-shaped corner stops at its front
-   end, which locate it sideways and take the push when you plug a cable
-   in. Hot-glue the PCB to the ledges and along the stops' 0.5 mm lip.
+   end, which take the push when you plug a cable in. Push it left against
+   the serial breakout's right stop, which rises to the board's height
+   (0.1 mm off its left edge). Hot-glue the PCB to the ledges and along the stops' 0.5 mm lip.
 3. Hold the plate against the ring faces and drive the two M4 × 8 screws
    from below.
 4. BOOT/RESET face the bottom plate: remove it and press them through the
@@ -59,7 +60,8 @@ the bottom plate, the ledges, corner stops and pedestal point up toward the swit
 | `BOARD_Z_SHIFT` / `BOARD_X_SHIFT` | 0.0 | Nudge the board if its shell catches in the slot |
 | `CORNER_T` / `CORNER_GAP` | 2.5 / 0.2 | Corner stops at the board's front: arm thickness and gap to the PCB edges (the board has 0.33 mm to the wall behind it) |
 | `SER_H` / `SER_W` | 3.2 / 8.94 | Serial shell; sets the pedestal height. The slot has 0.21 mm each way vertically, 0.44 sideways |
-| `SER_L` / `SER_PCB_W` | 14.6 / 9.8 | Breakout overall length and PCB width (datasheet); they place the stops behind and beside the PCB with 0.2 mm to spare, so check your part |
+| `SER_L` / `SER_PCB_W` | 14.6 / 9.8 | Breakout overall length and PCB width (datasheet); they place the stops behind the PCB (0.2 mm) and beside it, so check your part |
+| `SER_SIDE_GAP` / `BOARD_SIDE_GAP` | 0.1 / 0.1 | Breakout PCB sides → its stops' side arms; RP2040 left edge → the raised right serial stop (0.2 was loose on the rev. 3 print) |
 | `SER_SHELL_L` | 9.0 | Shell length; the pedestal ends under the shell's rear |
 | `SER_RECESS` / `USB_RECESS` | 1.0 | Shell faces behind the wall's outer face (wall is 2 mm) |
 | `CSK_ANGLE` / `CSK_DEPTH` | 90 / 1.2 | Countersink for the conical heads: Ø6.9 at the underside down to the Ø4.5 hole. A full-depth seat does not fit the 2 mm plate, so the head hangs ≤ 1.3 mm below it (0.95 mm clear of the bottom plate) |
@@ -74,4 +76,4 @@ full-radius ends.
 Reports any case surface sample inside the platform (only contact on the
 rings' face plane is allowed) and writes `sec_*.png` cross-sections (case
 blue, platform red, held parts green).
-Last run: 2026-09-25 — 17315 points on the Z −3.75 contact plane; no collisions.
+Last run: 2026-09-26 — 17315 points on the Z −3.75 contact plane; no collisions.
