@@ -85,11 +85,11 @@ the one next to the serial breakout.
             GP6  ●                         ●  GP26  R3 bottom
             GP7  ●                         ●  GP15  R2 home
             GP8  ●                         ●  GP14  R1 top
-                 └───●─────●─────●─────●─────●───┘
-                   GP9  GP10  GP11  GP12  GP13
-                    C2    C3    C4    C5    C6
-                 pinky                    inner index
-                   (front edge, toward the keys)
+                 └──●────●────●────●────●──┘
+                   GP9 GP10 GP11 GP12 GP13
+                   C2   C3   C4   C5   C6
+                  pinky           inner index
+                (front edge, toward the keys)
 ```
 
 ### Why these pins
