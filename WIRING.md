@@ -130,7 +130,7 @@ the flat (top) side and the wires bend away from the board.
 | GP26 | R3 (bottom row) | |
 | GP27 | R4 (thumbs) | |
 | GP0 | serial breakout **D+** | the split link: a single half-duplex wire, like the original TRRS |
-| GP1 | serial breakout **D−** | optional; only for two-wire serial later |
+| GP1 | serial breakout **D−** | unused by the firmware; worth wiring now so two-wire serial is firmware-only (see §3) |
 | 5V | serial breakout **U** | powers the other half through the link |
 | GND | serial breakout **G** | |
 | GP2 | *(flex build only, optional)* RGB **DIN** | hand-wired: leave free |
@@ -183,6 +183,32 @@ the same two files. See that repo's README for building and flashing.
   EEPROM (`EE_HANDS`). It is seeded on first boot by the left or right
   file (`INIT_EE_HANDS_LEFT` / `_RIGHT`). Plain `-bl uf2-split-left`
   cannot write it on the RP2040.
+
+### Split link: one wire, or two
+
+The link is **half-duplex on one wire**: data on D+ (GP0), plus 5V and
+GND, the same three conductors as the stock Skeletyl's TRRS link. The half
+with USB sends a request, then listens, and the other half answers on the
+same wire. That is plenty for key presses, layer state and the RGB sync.
+
+**Two wires (full-duplex)** only pays off when much more data crosses the
+link, such as a trackball or displays on the other half. If D− is already
+soldered to GP1 on both halves, switching needs no rewiring. Add to the
+Zero block of the keymap's `config.h`:
+
+```c
+#    define SERIAL_USART_FULL_DUPLEX
+#    define SERIAL_USART_TX_PIN 0U // GP0, D+
+#    define SERIAL_USART_RX_PIN 1U // GP1, D−
+#    define SERIAL_USART_PIN_SWAP
+```
+
+`SERIAL_USART_PIN_SWAP` is what keeps both halves wired identically. A
+straight USB-C cable joins D+ to D+ and D− to D−, so one half's transmit
+pin meets the other half's transmit pin. With this option set, the half
+with USB swaps its TX and RX when it starts (QMK's RP2040 serial driver,
+`serial_transport_driver_master_init`). Either half can still be the one
+with USB. The snippet is untested on hardware.
 
 ## Flex PCB check (2026-09-26)
 
