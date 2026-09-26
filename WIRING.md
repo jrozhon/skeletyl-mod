@@ -45,6 +45,20 @@ For every key:
 
 MX switch pins are interchangeable, so either pin can take the row.
 
+**Diode orientation is what counts, not which side the diode sits on.**
+The firmware (`ROW2COL`, fixed by the flex PCB, which shares it) needs the
+anode toward the row and the **band toward the column**:
+
+- Diode on the column side (steps above): row → switch → diode → band →
+  column.
+- Diode on the row side also works, but flipped: row → diode → band →
+  switch → column. The band faces the switch, away from the row wire.
+
+The common hand-wiring habit of a diode on the row with its band on the
+row wire is `COL2ROW`. With this firmware, no key wired that way works.
+A single diode in backwards kills only its own key, so when one key is
+dead, check its band first.
+
 - **Rows:** R1, R2 and R3 each link the 5 keys of one row. R4 links the 3
   thumbs.
 - **Columns:** C2 through C6 each link the diode bands of one column. The C2,
