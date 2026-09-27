@@ -61,7 +61,7 @@ the bottom plate, the ledges, corner stops and pedestal point up toward the swit
 | `BOARD_Z_SHIFT` / `BOARD_X_SHIFT` | 0.0 | Nudge the board if its shell catches in the slot |
 | `CORNER_T` / `CORNER_GAP` | 2.5 / 0.2 | Corner stops at the board's front: arm thickness and gap to the PCB edges (the board has 0.33 mm to the wall behind it) |
 | `SER_H` / `SER_W` | 3.2 / 8.94 | Serial shell; sets the pedestal height. The slot has 0.21 mm each way vertically, 0.44 sideways |
-| `SER_L` / `SER_PCB_W` | 14.6 / 9.8 | Breakout overall length and PCB width (datasheet); they place the stops behind the PCB (0.2 mm) and beside it, so check your part |
+| `SER_L` / `SER_PCB_W` | 14.6 / 8.9 | Breakout overall length (datasheet) and PCB width (caliper; the datasheet says 9.8); they place the stops behind the PCB (0.2 mm) and beside it, so check your part |
 | `SER_SIDE_GAP` / `BOARD_SIDE_GAP` | 0.0 / 0.1 | Breakout PCB sides → its stops' side arms, line-to-line (0.2 and 0.1 printed loose); RP2040 left edge → the raised right serial stop |
 | `SER_SHELL_L` | 9.0 | Shell length; the pedestal ends under the shell's rear |
 | `SER_RECESS` / `USB_RECESS` | 0.8 / 1.0 | Shell faces behind the wall's outer face (wall is 2 mm); the serial shell sat too deep at 1.0 |
