@@ -178,7 +178,20 @@ the same two files. See that repo's README for building and flashing.
   on top of `bastardkb/skeletyl/promicro` with `CONVERT_TO=rp2040_ce`.
 - **Master detection:** the converter senses USB power on GP19, which is
   wired on the Splinktegrated but not on the Zero. The Zero build detects
-  the USB connection in software instead (`SPLIT_USB_DETECT`).
+  the USB connection in software instead (`SPLIT_USB_DETECT`): a half
+  that the host enumerates within 2 s becomes master. Plugged in while the
+  computer is off (USB powered, host not running), no half enumerates and
+  both settle as slaves; `SPLIT_WATCHDOG_ENABLE` (shared `config.h`) then
+  reboots them every ~2 s until the host comes up, so no replugging is
+  needed.
+  - **No VBUS divider on the Zero.** On the Splinktegrated, GP19 senses the
+    USB connector's side of a Schottky diode, which the link's 5V cannot
+    reach. The Zero has no such diode: its USB VBUS *is* the 5V pad, and
+    the link joins both halves' 5V. A divider from 5V to a GPIO would read
+    high on both halves and make both master. Hardware sensing would need
+    the Zero's VBUS trace cut and bridged with a Schottky, the divider on
+    the connector side; that diode would also make a second USB cable
+    safe. Not done: the watchdog covers the use case.
 - **Handedness:** both halves are wired identically, so it lives in
   EEPROM (`EE_HANDS`). It is seeded on first boot by the left or right
   file (`INIT_EE_HANDS_LEFT` / `_RIGHT`). Plain `-bl uf2-split-left`
