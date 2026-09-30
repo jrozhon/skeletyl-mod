@@ -1,6 +1,7 @@
 # Wiring manual: Skeletyl halves on an RP2040-Zero
 
-Two Skeletyl builds share one pinout, so one firmware runs both:
+Two Skeletyl builds share one pinout. They differ in one wire, the thumb
+nearest the centre, so each has its own firmware target (§3):
 
 - **Hand-wired:** switches, diodes and wire, no RGB.
 - **Flex PCB:** the original Bastardkb flex PCBs (plate + thumb cluster)
@@ -9,7 +10,7 @@ Two Skeletyl builds share one pinout, so one firmware runs both:
 Both use the RP2040-Zero platform (`rp2040zero_platform/`) and the USB-C
 serial link between the halves.
 
-## 1. Matrix (same as the flex PCB)
+## 1. Matrix (the flex PCB's, except one thumb)
 
 4 rows × 5 columns per half, 18 keys. The names are the ones printed on
 the flex PCB (every key has a label like `C3R2`, and the header pads are
@@ -20,14 +21,21 @@ labelled too), so both builds use the same names.
 | **R1** top row | C2R1 | C3R1 | C4R1 | C5R1 | C6R1 |
 | **R2** home row | C2R2 | C3R2 | C4R2 | C5R2 | C6R2 |
 | **R3** bottom row | C2R3 | C3R3 | C4R3 | C5R3 | C6R3 |
-| **R4** thumbs | C2R4 | — | C4R4 | C5R4 | — |
+| **R4** thumbs, flex | C2R4 | — | C4R4 | C5R4 | — |
+| **R4** thumbs, hand-wired | — | — | C4R4 | C5R4 | C6R4 |
 
 - On both halves, C2 is the pinky column and C6 the inner index column, so
   the right half is a mirror image of the left.
-- The thumb row uses only C2, C4 and C5. From the key under the inner index
+- **Flex thumbs:** C2, C4 and C5. From the key under the inner index
   column toward the centre of the keyboard, the thumbs are **C4R4, C5R4,
-  C2R4**. That matches QMK's Skeletyl layout; on the flex build, go by the
-  thumb PCB's silkscreen.
+  C2R4**. That matches QMK's Skeletyl layout; go by the thumb PCB's
+  silkscreen. The thumb nearest the centre (Space on the left, Enter on the
+  right) shares the pinky column's wire.
+- **Hand-wired thumbs:** C4, C5 and C6, in that order toward the centre:
+  **C4R4, C5R4, C6R4**. The thumb nearest the centre moves from C2 to C6,
+  so each thumb's column follows its position. The
+  `skeletyl_zero_handwired_*` firmware maps C6R4 back to the key QMK expects
+  on C2R4 (§3).
 - **Thumb PCB:** it connects to the plate's 4-pad header with a straight
   4-wire ribbon, pad order C5, C4, R4, C2 on both boards. Its own KiCad net
   for the thumb row is `row1`, but it lands on the plate's `row5` net,
@@ -61,10 +69,45 @@ dead, check its band first.
 
 - **Rows:** R1, R2 and R3 each link the 5 keys of one row. R4 links the 3
   thumbs.
-- **Columns:** C2 through C6 each link the diode bands of one column. The C2,
-  C4 and C5 wires carry on to their thumb (C2 → C2R4, C4 → C4R4,
-  C5 → C5R4).
+- **Columns:** C2 through C6 each link the diode bands of one column. The C4,
+  C5 and C6 wires carry on to their thumb (C4 → C4R4, C5 → C5R4,
+  C6 → C6R4). C2 has no thumb.
 - In total you run 9 wires to the controller: R1–R4 and C2–C6.
+
+### Schematic
+
+One hand-wired half. Both halves are wired the same way.
+
+```
+                  C2          C3          C4          C5          C6
+                 GP9         GP10        GP11        GP12        GP13
+                pinky        ring       middle       index    inner index
+                   │           │           │           │           │
+R1 GP14 ────┬──────┼────┬──────┼────┬──────┼────┬──────┼────┬──────┼──
+            SW     │    SW     │    SW     │    SW     │    SW     │
+            └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●
+R2 GP15 ────┬──────┼────┬──────┼────┬──────┼────┬──────┼────┬──────┼──
+            SW     │    SW     │    SW     │    SW     │    SW     │
+            └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●
+R3 GP26 ────┬──────┼────┬──────┼────┬──────┼────┬──────┼────┬──────┼──
+            SW     │    SW     │    SW     │    SW     │    SW     │
+            └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●
+R4 GP27 ───────────┼───────────┼────┬──────┼────┬──────┼────┬──────┼──
+ (thumbs)          │           │    SW     │    SW     │    SW     │
+                   │           │    └─▶|───●    └─▶|───●    └─▶|───●
+```
+
+- `┼` is a crossing with no connection. `●` is a solder joint on the column
+  wire.
+- `▶|` is the diode, with the band (`|`) toward the column (`ROW2COL`).
+- On the case the thumbs sit in the same order as their columns, from the
+  key under the inner index column toward the centre:
+
+```
+                          left: Esc     Tab       Space
+                         right: Del     Bksp      Enter
+   inner index column ─▶     [C4R4]  [C5R4]    [C6R4]   ─▶ centre of keyboard
+```
 
 ## 2. RP2040-Zero pinout
 
@@ -116,15 +159,15 @@ the one next to the serial breakout.
 The platform's stops don't limit the choice: the pads are soldered from
 the flat (top) side and the wires bend away from the board.
 
-### Connections (same on both builds)
+### Connections (same on both builds, except the thumbs)
 
 | Pad | Connects to | Notes |
 | --- | --- | --- |
-| GP9 | C2 (pinky column) | also the thumb key C2R4 |
+| GP9 | C2 (pinky column) | flex: also the thumb key C2R4 |
 | GP10 | C3 (ring column) | |
 | GP11 | C4 (middle column) | also the thumb key C4R4 |
 | GP12 | C5 (index column) | also the thumb key C5R4 |
-| GP13 | C6 (inner index column) | |
+| GP13 | C6 (inner index column) | hand-wired: also the thumb key C6R4 |
 | GP14 | R1 (top row) | |
 | GP15 | R2 (home row) | |
 | GP26 | R3 (bottom row) | |
@@ -166,14 +209,25 @@ next to each pad.
 ## 3. QMK
 
 The firmware lives in the userspace repo (`~/qmk_userspace`, keymap
-`jrozhon`): targets `skeletyl_zero_jrozhon_lefthalf` and
-`skeletyl_zero_jrozhon_righthalf`. Both builds (hand-wired and flex) run
-the same two files. See that repo's README for building and flashing.
+`jrozhon`), one target pair per build:
+
+| Build | Left half | Right half |
+| --- | --- | --- |
+| Flex PCB | `skeletyl_zero_jrozhon_lefthalf` | `skeletyl_zero_jrozhon_righthalf` |
+| Hand-wired | `skeletyl_zero_handwired_lefthalf` | `skeletyl_zero_handwired_righthalf` |
+
+See that repo's README for building and flashing.
+
+- **Hand-wired thumbs:** `SKELETYL_HANDWIRED=yes` adds `handwired.c` to the
+  keymap, which swaps C2 and C6 on the thumb row before QMK looks up a
+  keycode or a key's hand (Chordal Hold). The key on C6R4 then acts as the
+  stock C2R4 (Space / Enter), and the keymap stays unchanged.
 
 - **Keymap:** unchanged. The matrix is the same as QMK's
   `bastardkb/skeletyl` (matrix rows 0–3 = R1–R4, columns 0–4 = C2–C6), so
   its `LAYOUT_split_3x5_3` and the shared `users/jrozhon/jrozhon.c` layers
-  work as they are. Diode direction is `ROW2COL`.
+  work as they are (the hand-wired thumb on C6 goes through `handwired.c`,
+  above). Diode direction is `ROW2COL`.
 - **Pins:** set in the keymap's `config.h` when `SKELETYL_RP2040_ZERO=yes`,
   on top of `bastardkb/skeletyl/promicro` with `CONVERT_TO=rp2040_ce`.
 - **Master detection:** the converter senses USB power on GP19, which is
