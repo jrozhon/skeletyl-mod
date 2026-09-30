@@ -79,34 +79,31 @@ dead, check its band first.
 One hand-wired half. Both halves are wired the same way.
 
 ```
-                  C2          C3          C4          C5          C6
-                 GP9         GP10        GP11        GP12        GP13
-                pinky        ring       middle       index    inner index
-                   │           │           │           │           │
-R1 GP14 ────┬──────┼────┬──────┼────┬──────┼────┬──────┼────┬──────┼──
-            SW     │    SW     │    SW     │    SW     │    SW     │
-            └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●
-R2 GP15 ────┬──────┼────┬──────┼────┬──────┼────┬──────┼────┬──────┼──
-            SW     │    SW     │    SW     │    SW     │    SW     │
-            └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●
-R3 GP26 ────┬──────┼────┬──────┼────┬──────┼────┬──────┼────┬──────┼──
-            SW     │    SW     │    SW     │    SW     │    SW     │
-            └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●    └─▶|───●
-R4 GP27 ───────────┼───────────┼────┬──────┼────┬──────┼────┬──────┼──
- (thumbs)          │           │    SW     │    SW     │    SW     │
-                   │           │    └─▶|───●    └─▶|───●    └─▶|───●
+                    C2          C3          C4          C5          C6
+                    GP9        GP10        GP11        GP12        GP13
+                   pinky       ring       middle       index    inner index
+                     │           │           │           │           │
+R1 GP14 ───┬─────────┼─┬─────────┼─┬─────────┼─┬─────────┼─┐         │
+           └──SW──>|─┤ └──SW──>|─┤ └──SW──>|─┤ └──SW──>|─┤ └──SW──>|─┤
+R2 GP15 ───┬─────────┼─┬─────────┼─┬─────────┼─┬─────────┼─┐         │
+           └──SW──>|─┤ └──SW──>|─┤ └──SW──>|─┤ └──SW──>|─┤ └──SW──>|─┤
+R3 GP26 ───┬─────────┼─┬─────────┼─┬─────────┼─┬─────────┼─┐         │
+           └──SW──>|─┘ └──SW──>|─┘ └──SW──>|─┤ └──SW──>|─┤ └──SW──>|─┤
+R4 GP27 ───────────────────────────┬─────────┼─┬─────────┼─┐         │
+                                   └──SW──>|─┘ └──SW──>|─┘ └──SW──>|─┘
 ```
 
-- `┼` is a crossing with no connection. `●` is a solder joint on the column
-  wire.
-- `▶|` is the diode, with the band (`|`) toward the column (`ROW2COL`).
+- `┼` is a crossing with no connection. `┤` and `┘` are solder joints on
+  the column wire.
+- `>|` is the diode, with the band (`|`) toward the column (`ROW2COL`).
+- C2 and C3 end at R3: they have no thumb.
 - On the case the thumbs sit in the same order as their columns, from the
   key under the inner index column toward the centre:
 
 ```
                           left: Esc     Tab       Space
                          right: Del     Bksp      Enter
-   inner index column ─▶     [C4R4]  [C5R4]    [C6R4]   ─▶ centre of keyboard
+   inner index column ──>    [C4R4]  [C5R4]    [C6R4]   ──> centre of keyboard
 ```
 
 ## 2. RP2040-Zero pinout
