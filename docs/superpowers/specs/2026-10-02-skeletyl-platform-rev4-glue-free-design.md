@@ -112,15 +112,21 @@ plate edge into the wall recess, as before.
   the middle wall, up to Z −0.35 (0.5 above the tail top). The middle
   stays closed: the wires leave upward, not backward.
 - *Left wall:* X 1.15…1.95 (0.2 off the tail's left edge, so glue runs
-  down the edge), Y −24.27…−18.57, same height.
+  down the edge), Y −26.77…−18.57 (the whole tail), same height.
 - *Right wall:* the middle wall.
-- *Floor:* Z −2.45, 0.8 under the tail's underside. That clears the small
-  SMD part near the tail end, and glue gets under the tail.
-- *Dam:* the pocket's wall-side end at Y −24.27: a rib from the floor up to
-  0.1 under the tail (Z −1.75), across the pocket. It takes the unplug pull
-  through the glue blob.
-- *Keys:* two Ø1.5 holes through the floor and the plate. Glue runs into
-  them and anchors the blob.
+- *Floor:* Z −2.45, 0.8 under the tail's underside, from the dam to the
+  rear wall. That clears the small SMD part on the tail's underside, and
+  glue gets under the tail.
+- *Dam:* right behind the bump, Y −26.57…−25.37 (0.2 off the bump, 1.2
+  thick), a rib across the pocket from the plate up to 0.1 under the tail
+  (Z −1.75). The SMD part sits about 2–4 mm behind the bump (estimated
+  from the photo), so the dam stays in front of it, where the tail has
+  only vias. Its rear face takes the unplug pull through the glue blob;
+  its front face also stops the bump on a plug-in push.
+- *Keys:* two Ø1.5 holes through the floor and the plate, at X 4.1 and
+  9.1, Y −23.22. Glue runs into them and anchors the blob. Glue that
+  pushes through to the underside is trimmed flush (2.25 mm to the bottom
+  plate).
 - *Open top:* hot glue fills the pocket from above, over the tail end, the
   solder joints and the first mm of wire.
 
@@ -136,8 +142,13 @@ their side arms.
 **Left lip** (rigid, on the middle wall): it overhangs the Zero's left edge
 by 0.5 (X 11.90…12.50, 0.1 off the edge with `BOARD_SIDE_GAP`), underside
 Z 1.45 (0.1 above the flat top), top Z 2.15. Y over pads 4–6 (GP3–GP5,
-all free) ± 1: Y −24.77…−17.69. The underside has a 45° chamfer toward the
-wall so it prints without support.
+all free) ± 1: Y −24.77…−17.69. No chamfer under it: one would reach
+down into the PCB edge. The 0.6 overhang (0.7 thick) prints in PLA
+without support; so does the tail lip's 0.5.
+
+**Sideways play:** the board sits between the middle wall (X 11.90) and
+the front-right corner stop's side arm (X 30.20), so it can shift 0.3.
+At worst the left lip still overlaps it by 0.3 and the hook by 0.3.
 
 **Right snap hook** (printed in **PLA**, so the strain is kept ≤ 1.5 %):
 - Vertical cantilever outside the right ledge: X 30.70…31.50 (0.8 thick,
@@ -151,7 +162,8 @@ wall so it prints without support.
   groove's outer side. Below the ring faces the case is free to X 45.
 - Lip 0.4 over the PCB's right edge (`HOOK_LIP`; X 29.60…30.00, the board
   ends at X 30.0), underside Z 1.45, with a 45° ramp on top so the PCB
-  pushes the hook aside as it goes down.
+  pushes the hook aside as it goes down. Under the part outside the PCB
+  (X 30.30…30.70) a 45° chamfer meets the arm, so only 0.7 overhangs.
 - Y centred on GP28 (pad 5), 2 wide: Y −22.23…−20.23. The neighbours'
   joints are ≥ 0.75 away: GP29 is free, GP27 (R4) is at −18.69.
 - The case is clear: no case surface at X < 38.8 for Y −22.5…−18 between
@@ -203,7 +215,7 @@ New or changed in `rp2040zero_platform.py`:
 | `HOOK_GAP` | 0.4 | hook arm → right ledge (also the groove width) |
 | `HOOK_GROOVE_DEPTH` | 1.5 | relief groove depth into the 2 mm plate |
 | `POCKET_FLOOR_GAP` | 0.8 | tail underside → pocket floor |
-| `POCKET_L` | 3.0 | pocket length in front of the tail end |
+| `DAM_GAP` / `DAM_T` | 0.2 / 1.2 | bump → dam, dam thickness |
 | `POCKET_KEY_D` | 1.5 | key hole diameter |
 
 ## 5. Verification
@@ -226,10 +238,10 @@ New or changed in `rp2040zero_platform.py`:
    samples inside the part except on the Z −3.75 contact plane. New section
    PNGs: an XZ cut through the hook and the left lip (Y −21.2), and one
    through the glue pocket (Y −22).
-3. **Test coupon** `hook_coupon.stl`: a cut-out of the plate, X 10…32 ×
-   Y −26…−16, so the Zero's lip and hook and the breakout's tail lip can be
-   tried with the real parts before printing the full platform. Same
-   script, same parameters.
+3. **Test coupon** `hook_coupon.stl`: a cut-out of the platform,
+   X 0.5…32.5 × Y −27.5…−16, with the Zero's lip and hook, the tail lip
+   and the glue pocket, to try with the real parts before printing the
+   full platform. Same script, same parameters.
 
 ## Not in scope
 
