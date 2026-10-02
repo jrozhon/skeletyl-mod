@@ -401,21 +401,39 @@ def make_components():
     ])
 
 
+COUPON = (0.5, HOOK_PLATE_X1, -27.5, -11.0)   # X0, X1, Y0, Y1 of the test print (Y1 past the window, which would split it)
+
+
+def make_coupon(shape):
+    """Cut-out of the platform with the RP2040 lip, the snap hook, the tail
+    lip and the glue pocket, to try with the real parts before printing the
+    whole platform."""
+    x0, x1, y0, y1 = COUPON
+    return shape.common(box(x0, x1, y0, y1, PLATE_Z0 - 1.0, MID_WALL_TOP_Z + 1.0)).removeSplitter()
+
+
 # ---------------------------------------------------------------------------
 # Export / entry points
 # ---------------------------------------------------------------------------
 NAME = "rp2040zero_platform"
 
 
-def export(shape, out_dir):
-    """Write FCStd, STEP and STL for `shape` into out_dir; return the paths."""
+def write_stl(shape, path):
     import MeshPart
 
+    mesh = MeshPart.meshFromShape(Shape=shape, LinearDeflection=0.02, AngularDeflection=0.1)
+    mesh.write(path)
+
+
+def export(shape, out_dir):
+    """Write FCStd, STEP and STL for `shape`, plus the hook test coupon's STL,
+    into out_dir; return the paths."""
     os.makedirs(out_dir, exist_ok=True)
     paths = {
         'fcstd': os.path.join(out_dir, NAME + ".FCStd"),
         'step': os.path.join(out_dir, NAME + ".step"),
         'stl': os.path.join(out_dir, NAME + ".stl"),
+        'coupon_stl': os.path.join(out_dir, "hook_coupon.stl"),
     }
     doc = FreeCAD.newDocument(NAME)
     obj = doc.addObject("Part::Feature", "Platform")
@@ -423,8 +441,8 @@ def export(shape, out_dir):
     doc.recompute()
     doc.saveAs(paths['fcstd'])
     shape.exportStep(paths['step'])
-    mesh = MeshPart.meshFromShape(Shape=shape, LinearDeflection=0.02, AngularDeflection=0.1)
-    mesh.write(paths['stl'])
+    write_stl(shape, paths['stl'])
+    write_stl(make_coupon(shape), paths['coupon_stl'])
     FreeCAD.closeDocument(doc.Name)
     return paths
 

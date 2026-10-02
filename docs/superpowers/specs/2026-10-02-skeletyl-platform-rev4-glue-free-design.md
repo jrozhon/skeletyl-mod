@@ -239,7 +239,7 @@ New or changed in `rp2040zero_platform.py`:
    PNGs: an XZ cut through the hook and the left lip (Y −21.2), and one
    through the glue pocket (Y −22).
 3. **Test coupon** `hook_coupon.stl`: a cut-out of the platform,
-   X 0.5…32.5 × Y −27.5…−16, with the Zero's lip and hook, the tail lip
+   X 0.5…32.5 × Y −27.5…−11 (past the board window, which would otherwise split it), with the Zero's lip and hook, the tail lip
    and the glue pocket, to try with the real parts before printing the
    full platform. Same script, same parameters.
 

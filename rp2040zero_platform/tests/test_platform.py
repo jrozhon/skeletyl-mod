@@ -362,6 +362,24 @@ class ShapeTest(unittest.TestCase):
             self.assertFalse(inside(self.shape, rp.SER_CX, y, z), z)
 
 
+    # -- test coupon -------------------------------------------------------
+    def test_coupon_holds_the_lips_hook_and_pocket(self):
+        coupon = rp.make_coupon(self.shape)
+        self.assertTrue(coupon.isValid())
+        self.assertEqual(len(coupon.Solids), 1)
+        x0, x1, y0, y1 = rp.COUPON
+        bb = coupon.optimalBoundingBox(True, False)   # the fast box is loose around the ring B pad
+        self.assertGreaterEqual(bb.XMin, x0 - 1e-6)
+        self.assertLessEqual(bb.XMax, x1 + 1e-6)
+        self.assertGreaterEqual(bb.YMin, y0 - 1e-6)
+        self.assertLessEqual(bb.YMax, y1 + 1e-6)
+        for p in ((rp.HOOK_X0 + rp.HOOK_T / 2, rp.HOOK_YC, rp.PLATE_Z1 + 1.0),                     # hook arm
+                  (rp.BOARD_X0 + rp.LIP_OVER / 2, rp.zero_pad_y(5), rp.LIP_Z0 + EPS),             # RP2040 lip
+                  (rp.SER_LIP_X0 + rp.LIP_OVER / 2, rp.SER_SHELL_Y1 + 1.0, rp.SER_LIP_Z0 + EPS),  # tail lip
+                  (rp.SER_CX, (rp.DAM_Y0 + rp.DAM_Y1) / 2, rp.DAM_TOP_Z - EPS)):                  # dam
+            self.assertTrue(inside(coupon, *p), p)
+        self.assertAlmostEqual(bb.ZMin, rp.PLATE_Z0, places=4)
+
 class ImportTest(unittest.TestCase):
     def test_check_clearance_uses_the_platform_module_inside_the_package(self):
         from rp2040zero_platform import check_clearance
@@ -369,13 +387,14 @@ class ImportTest(unittest.TestCase):
 
 
 class ExportTest(unittest.TestCase):
-    def test_export_writes_three_files(self):
+    def test_export_writes_the_part_and_the_coupon(self):
         with tempfile.TemporaryDirectory() as d:
             paths = rp.export(rp.build(), d)
+            self.assertEqual(set(paths), {'fcstd', 'step', 'stl', 'coupon_stl'})
+            self.assertEqual(os.path.basename(paths['coupon_stl']), "hook_coupon.stl")
             for p in paths.values():
                 self.assertTrue(os.path.exists(p), p)
                 self.assertGreater(os.path.getsize(p), 1000, p)
-
 
 if __name__ == "__main__":
     unittest.main()
