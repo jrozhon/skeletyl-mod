@@ -140,6 +140,7 @@ class ShapeTest(unittest.TestCase):
                      and rp.SER_SHELL_Y1 <= y <= rp.SER_STOP_Y1),                              # glue pocket
                     (any(a <= x <= b for a, b in corners)
                      and rp.BOARD_Y1 - rp.CORNER_SIDE_L <= y <= rp.CORNER_Y1),
+                    rp.HOOK_X0 <= x <= rp.HOOK_X1 and rp.HOOK_Y0 <= y <= rp.HOOK_Y1,       # snap hook arm
                 ]
                 self.assertTrue(any(known), (x, y))
 
@@ -182,6 +183,73 @@ class ShapeTest(unittest.TestCase):
             self.assertTrue(inside(self.shape, x_arm, y, rp.CORNER_TOP_Z - EPS), x_arm)
             self.assertFalse(inside(self.shape, x_gap, y, rp.PCB_Z1), x_gap)
             self.assertFalse(inside(self.shape, x_arm, rp.BOARD_Y1 - rp.CORNER_SIDE_L - EPS, rp.PCB_Z1), x_arm)
+
+    # -- RP2040-Zero: left lip, snap hook (rev. 4) -------------------------
+    def test_zero_pad_positions(self):
+        self.assertAlmostEqual(rp.zero_pad_y(4) - rp.BOARD_Y0, 10.0, places=1)
+        self.assertAlmostEqual(rp.zero_pad_y(5) - rp.zero_pad_y(4), 2.54)
+
+    def test_left_lip_over_free_pads(self):
+        self.assertAlmostEqual(rp.LIP_Z0 - rp.PCB_Z1, rp.LIP_GAP)
+        self.assertAlmostEqual(rp.ZERO_LIP_X1 - rp.BOARD_X0, rp.LIP_OVER)
+        self.assertAlmostEqual(rp.MID_Y1, rp.ZERO_LIP_Y1)
+        x = rp.BOARD_X0 + rp.LIP_OVER / 2
+        for k in (4, 5, 6):                                  # GP3, GP4, GP5: no wires
+            self.assertTrue(inside(self.shape, x, rp.zero_pad_y(k), rp.LIP_Z0 + EPS), k)
+            self.assertFalse(inside(self.shape, x, rp.zero_pad_y(k), rp.LIP_Z0 - EPS), k)
+        self.assertFalse(inside(self.shape, x, rp.zero_pad_y(2), rp.LIP_Z0 + EPS))   # GP1 (serial D-)
+        # >= 0.7 between the lip and GP1's pad (pads are ~1.5 long)
+        self.assertGreaterEqual(rp.ZERO_LIP_Y0 - (rp.zero_pad_y(2) + 0.75), 0.7)
+
+    def test_hook_arm_and_lip(self):
+        y = rp.HOOK_YC
+        self.assertAlmostEqual(y, rp.zero_pad_y(rp.HOOK_PAD))
+        self.assertTrue(inside(self.shape, rp.HOOK_X0 + rp.HOOK_T / 2, y, rp.PLATE_Z1 + 1.0))
+        self.assertFalse(inside(self.shape, rp.LEDGE_X1 + rp.HOOK_GAP / 2, y, rp.PLATE_Z1 + 1.0))  # free of the ledge
+        self.assertTrue(inside(self.shape, rp.BOARD_X1 - rp.HOOK_LIP / 2, y, rp.LIP_Z0 + EPS))
+        self.assertFalse(inside(self.shape, rp.BOARD_X1 - rp.HOOK_LIP / 2, y, rp.LIP_Z0 - EPS))
+        self.assertFalse(inside(self.shape, rp.HOOK_TIP_X - EPS, y, rp.LIP_Z0 + EPS))
+        # 45 deg ramp on top: solid just above the tip, empty at the top over the tip
+        self.assertTrue(inside(self.shape, rp.HOOK_TIP_X + 0.1, y, rp.LIP_Z0 + 0.05))
+        self.assertFalse(inside(self.shape, rp.HOOK_TIP_X + 0.1, y, rp.MID_WALL_TOP_Z - EPS))
+        self.assertTrue(inside(self.shape, rp.HOOK_X0 + EPS, y, rp.MID_WALL_TOP_Z - EPS))
+        # nothing of the hook outside its 2 mm
+        self.assertFalse(inside(self.shape, rp.HOOK_X0 + rp.HOOK_T / 2, rp.HOOK_Y1 + EPS, rp.PLATE_Z1 + 1.0))
+
+    def test_hook_groove(self):
+        self.assertAlmostEqual(rp.HOOK_ROOT_Z, rp.PLATE_Z1 - rp.HOOK_GROOVE_DEPTH)
+        self.assertGreaterEqual(rp.HOOK_ROOT_Z - rp.PLATE_Z0, 0.5)               # groove floor
+        for x, y in ((rp.GROOVE_X0 + rp.HOOK_GAP / 2, rp.HOOK_YC),               # inner side
+                     (rp.GROOVE_X1 - rp.HOOK_GAP / 2, rp.HOOK_YC),               # outer side
+                     (rp.HOOK_X0 + rp.HOOK_T / 2, rp.GROOVE_Y0 + rp.HOOK_GAP / 2),   # wall side
+                     (rp.HOOK_X0 + rp.HOOK_T / 2, rp.GROOVE_Y1 - rp.HOOK_GAP / 2)):  # front side
+            self.assertFalse(inside(self.shape, x, y, rp.HOOK_ROOT_Z + EPS), (x, y))
+            self.assertTrue(inside(self.shape, x, y, rp.HOOK_ROOT_Z - EPS), (x, y))
+        # the plate is widened to carry the groove's outer side
+        self.assertTrue(inside(self.shape, rp.GROOVE_X1 + 0.2, rp.HOOK_YC, rp.PLATE_Z1 - EPS))
+        self.assertGreater(rp.HOOK_PLATE_X1, rp.GROOVE_X1 + 0.4)
+
+    def test_hook_strain_ok_for_pla(self):
+        length = rp.LIP_Z0 - rp.HOOK_ROOT_Z
+        strain = 1.5 * rp.HOOK_T * rp.HOOK_LIP / length ** 2
+        self.assertLessEqual(strain, 0.015)
+
+    def test_hook_clear_of_used_pads(self):
+        # GP27 (R4) is pad 6 on the right edge; GP29 (pad 4) is free
+        self.assertGreaterEqual(rp.zero_pad_y(6) - 0.75 - rp.HOOK_Y1, 0.7)
+
+    def test_hook_clear_of_ring_b(self):
+        self.assertGreaterEqual(rp.GROOVE_Y0, rp.RING_B_FREE_Y - 0.5)   # ring B's flat face ends at Y -24
+        self.assertGreaterEqual(rp.HOOK_Y0, rp.RING_B_FREE_Y)            # the arm stands where the case is free
+
+    def test_board_cannot_slip_off_a_lip(self):
+        # sideways play: middle wall (MID_X1) to the front-right corner stop (BOARD_X1 + CORNER_GAP)
+        play = (rp.BOARD_X1 + rp.CORNER_GAP) - (rp.MID_X1 + rp.BOARD_W)
+        self.assertAlmostEqual(play, rp.CORNER_GAP + rp.BOARD_SIDE_GAP)
+        self.assertGreaterEqual(rp.ZERO_LIP_X1 - (rp.MID_X1 + play), 0.25)              # left lip
+        self.assertGreaterEqual((rp.MID_X1 + rp.BOARD_W) - rp.HOOK_TIP_X, 0.25)        # hook
+        # the hook's underside chamfer stays outside the PCB even with the board pushed right
+        self.assertGreaterEqual(rp.LEDGE_X1, rp.BOARD_X1 + rp.CORNER_GAP)
 
     # -- USB-C serial breakout -----------------------------------------------
     def test_serial_shell_centred_in_the_new_slot(self):

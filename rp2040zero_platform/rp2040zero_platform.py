@@ -123,6 +123,16 @@ DAM_GAP = 0.2                  # bump's rear face -> dam
 DAM_T = 1.2                    # dam thickness (Y); its rear face takes the unplug pull through the glue
 POCKET_KEY_D = 1.5             # glue key holes through the floor and the plate
 POCKET_KEY_DX = 2.5            # key holes at SER_CX +- this
+ZERO_PAD1_Y = 2.38             # USB-end PCB edge -> pad 1 centre along the long edges (user: pad 4 at ~10 mm)
+ZERO_PAD_PITCH = 2.54
+ZERO_LIP_MARGIN = 1.0          # the left lip covers pads 4-6 (GP3-GP5, no wires) and this much past them
+HOOK_PAD = 5                   # right-edge pad under the snap hook (GP28, no wire)
+HOOK_T = 0.8                   # hook arm thickness (X)
+HOOK_W = 2.0                   # hook width (Y)
+HOOK_LIP = 0.4                 # hook reach over the PCB edge = how far the arm bends
+HOOK_GAP = 0.4                 # hook arm -> right ledge, and the relief groove's width around the arm
+HOOK_GROOVE_DEPTH = 1.5        # relief groove into the 2 mm plate: the arm bends from its 0.5 floor
+HOOK_PLATE_X1 = 32.5           # plate widened to here beside the hook (the case is free below the rings)
 
 # ---------------------------------------------------------------------------
 # Derived values (do not edit)
@@ -144,6 +154,13 @@ BOARD_X1 = BOARD_CX + BOARD_W / 2.0
 USB_FACE_Y = WALL_OUTER_Y + USB_RECESS
 BOARD_Y0 = USB_FACE_Y + USB_OVERHANG         # rear (USB) edge
 BOARD_Y1 = BOARD_Y0 + BOARD_L                # front edge
+
+
+def zero_pad_y(k):
+    """Y of pad k (1 at the USB end) along the RP2040-Zero's long edges."""
+    return BOARD_Y0 + ZERO_PAD1_Y + (k - 1) * ZERO_PAD_PITCH
+
+
 LEDGE_X0 = BOARD_X0 - BOARD_CLEAR            # left ledge outer edge
 LEDGE_X1 = BOARD_X1 + BOARD_CLEAR            # right ledge outer edge
 LEDGE_Y1 = BOARD_Y1 + BOARD_CLEAR            # ledges end here
@@ -174,7 +191,22 @@ SER_LIP_Y1 = SER_SHELL_Y1 + SER_LIP_L
 SER_LIP_Z0 = SER_TAIL_Z1 + LIP_GAP
 MID_X0 = SER_X1                              # middle wall: right side wall of the shell and the tail ...
 MID_X1 = BOARD_STOP_X                        # ... and BOARD_SIDE_GAP off the RP2040's left edge
-MID_Y1 = -17.69                              # front end of the middle wall (Task 2: the RP2040 lip's end)
+LIP_Z0 = PCB_Z1 + LIP_GAP                    # underside of the RP2040 lip and the hook
+ZERO_LIP_X1 = BOARD_X0 + LIP_OVER
+ZERO_LIP_Y0 = zero_pad_y(4) - ZERO_LIP_MARGIN
+ZERO_LIP_Y1 = zero_pad_y(6) + ZERO_LIP_MARGIN
+MID_Y1 = ZERO_LIP_Y1                         # the middle wall ends with the RP2040 lip
+HOOK_YC = zero_pad_y(HOOK_PAD)
+HOOK_Y0 = HOOK_YC - HOOK_W / 2.0
+HOOK_Y1 = HOOK_YC + HOOK_W / 2.0
+HOOK_X0 = LEDGE_X1 + HOOK_GAP                # arm inner face
+HOOK_X1 = HOOK_X0 + HOOK_T
+HOOK_TIP_X = BOARD_X1 - HOOK_LIP
+HOOK_ROOT_Z = PLATE_Z1 - HOOK_GROOVE_DEPTH   # the arm bends from the groove floor
+GROOVE_X0 = LEDGE_X1
+GROOVE_X1 = HOOK_X1 + HOOK_GAP
+GROOVE_Y0 = HOOK_Y0 - HOOK_GAP
+GROOVE_Y1 = HOOK_Y1 + HOOK_GAP
 POCKET_X0 = SER_PCB_X0 - CORNER_GAP          # glue pocket left wall, inner face
 POCKET_FLOOR_Z = SER_TAIL_Z0 - POCKET_FLOOR_GAP
 DAM_Y0 = SER_SHELL_Y1 + DAM_GAP
@@ -205,6 +237,12 @@ def prism(points, z0, z1):
     return Part.Face(Part.makePolygon(pts)).extrude(Vector(0, 0, z1 - z0))
 
 
+def prism_xz(points, y0, y1):
+    """Prism over a closed XZ polygon, from y0 to y1."""
+    pts = [Vector(x, y0, z) for x, z in points] + [Vector(points[0][0], y0, points[0][1])]
+    return Part.Face(Part.makePolygon(pts)).extrude(Vector(0, y1 - y0, 0))
+
+
 def fuse_all(shapes):
     shape = shapes[0]
     for s in shapes[1:]:
@@ -228,8 +266,16 @@ def make_plate():
     pad_a = cyl(ax, ay, 2 * RING_PAD_R, PLATE_Z0, PLATE_Z1)
     neck_a = box(LEFT_EDGE[0][0], ax + RING_PAD_R, RING_A_PAD_Y0, ay, PLATE_Z0, PLATE_Z1)
     pad_b = cyl(bx, by, 2 * RING_PAD_R, PLATE_Z0, PLATE_Z1)
-    plate = fuse_all([body, pad_a, neck_a, pad_b])
-    return plate.common(make_keep()).cut(make_window())
+    hook_pad = box(PLATE_RIGHT_X - 1.0, HOOK_PLATE_X1, GROOVE_Y0 - HOOK_GAP, GROOVE_Y1 + HOOK_GAP,
+                   PLATE_Z0, PLATE_Z1)
+    plate = fuse_all([body, pad_a, neck_a, pad_b, hook_pad])
+    return plate.common(make_keep()).cut(make_window()).cut(make_hook_groove())
+
+
+def make_hook_groove():
+    """Relief groove around the snap hook's root, so the arm bends over the
+    plate's thickness too."""
+    return box(GROOVE_X0, GROOVE_X1, GROOVE_Y0, GROOVE_Y1, HOOK_ROOT_Z, PLATE_Z1 + 1.0)
 
 
 def make_window():
@@ -288,12 +334,14 @@ def make_shell_wall():
 
 def make_middle_wall():
     """Rigid wall between the breakout and the RP2040: the right side wall of
-    the serial shell and tail, with a lip over the tail's right edge. Beside
-    the shell it stays at ledge height so the GP0/GP1 wires cross it."""
+    the serial shell and tail, with a lip over the tail's right edge and a
+    lip over the RP2040's left edge (pads 4-6, no wires). Beside the shell
+    it stays at ledge height so the GP0/GP1 wires cross it."""
     return fuse_all([
         box(MID_X0, MID_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, PCB_Z0),
         box(MID_X0, MID_X1, SER_SHELL_Y1, MID_Y1, PLATE_Z0, MID_WALL_TOP_Z),
         box(SER_LIP_X0, MID_X0, SER_SHELL_Y1, SER_LIP_Y1, SER_LIP_Z0, SER_LIP_Z0 + LIP_T),
+        box(MID_X1, ZERO_LIP_X1, ZERO_LIP_Y0, ZERO_LIP_Y1, LIP_Z0, MID_WALL_TOP_Z),
     ])
 
 
@@ -318,13 +366,25 @@ def make_pocket_keys():
                      for dx in (-POCKET_KEY_DX, POCKET_KEY_DX)])
 
 
+def make_hook():
+    """Snap hook over the RP2040's right edge: a vertical arm standing on the
+    groove floor, flexing outward, with a lip that has a 45 deg ramp on top
+    (the board pushes it aside) and a 45 deg chamfer under the part outside
+    the PCB (shorter overhang)."""
+    arm = box(HOOK_X0, HOOK_X1, HOOK_Y0, HOOK_Y1, HOOK_ROOT_Z, MID_WALL_TOP_Z)
+    ramp_top_x = HOOK_TIP_X + (MID_WALL_TOP_Z - LIP_Z0)
+    lip = prism_xz([(HOOK_TIP_X, LIP_Z0), (LEDGE_X1, LIP_Z0), (HOOK_X0, LIP_Z0 - HOOK_GAP),
+                    (HOOK_X0, MID_WALL_TOP_Z), (ramp_top_x, MID_WALL_TOP_Z)], HOOK_Y0, HOOK_Y1)
+    return arm.fuse(lip)
+
+
 # ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 def build():
     """Return the finished platform as a single solid."""
     shape = fuse_all([make_plate(), make_ledges(), make_corner_stops(), make_pedestal(),
-                      make_shell_wall(), make_middle_wall(), make_glue_pocket()])
+                      make_shell_wall(), make_middle_wall(), make_glue_pocket(), make_hook()])
     return shape.cut(make_screw_cutters()).cut(make_pocket_keys()).removeSplitter()
 
 
