@@ -36,7 +36,7 @@ class ShapeTest(unittest.TestCase):
     def test_extents(self):
         bb = self.shape.optimalBoundingBox(True, False)   # the fast box is loose around curved edges
         self.assertAlmostEqual(bb.YMin, rp.PLATE_REAR_Y, places=4)
-        self.assertAlmostEqual(bb.ZMax, rp.CORNER_TOP_Z, places=4)
+        self.assertAlmostEqual(bb.ZMax, rp.MID_WALL_TOP_Z, places=4)
         self.assertAlmostEqual(bb.XMin, rp.LEFT_EDGE[0][0], places=4)
         self.assertAlmostEqual(bb.XMax, rp.RING_B[0] + rp.RING_PAD_R, places=4)
 
@@ -124,22 +124,24 @@ class ShapeTest(unittest.TestCase):
     def test_components_clear_the_plate(self):
         self.assertGreaterEqual(rp.USB_Z0 - rp.PLATE_Z1, 0.5)
 
-    def test_only_ledges_pedestal_and_corner_stops_stand_above_the_plate(self):
+    def test_only_known_features_stand_above_the_plate(self):
         ledges = ((rp.LEDGE_X0, rp.LEDGE_X0 + rp.LEDGE_W), (rp.LEDGE_X1 - rp.LEDGE_W, rp.LEDGE_X1))
-        # corner stops: the bounding boxes of the two Ls
         corners = ((rp.BOARD_X0 - rp.CORNER_GAP - rp.CORNER_T, rp.BOARD_X0 + rp.CORNER_REACH),
                    (rp.BOARD_X1 - rp.CORNER_REACH, rp.BOARD_X1 + rp.CORNER_GAP + rp.CORNER_T))
         for x in [rp.LEFT_EDGE[0][0] + 0.25 + 0.5 * i for i in range(80)]:
             for y in [rp.PLATE_REAR_Y + 0.25 + 0.5 * j for j in range(60)]:
                 if not inside(self.shape, x, y, rp.PLATE_Z1 + 0.3):
                     continue
-                in_ledge = any(a <= x <= b for a, b in ledges) and y <= rp.LEDGE_Y1
-                in_pedestal = rp.SER_X0 <= x <= rp.SER_X1 and y <= rp.SER_SHELL_Y1
-                in_corner = (any(a <= x <= b for a, b in corners)
-                             and rp.BOARD_Y1 - rp.CORNER_SIDE_L <= y <= rp.CORNER_Y1)
-                in_serial_stop = (rp.SER_ARM_X0 - rp.CORNER_T <= x <= rp.BOARD_STOP_X
-                                  and rp.SER_PCB_Y1 - rp.CORNER_SIDE_L <= y <= rp.SER_STOP_Y1)
-                self.assertTrue(in_ledge or in_pedestal or in_corner or in_serial_stop, (x, y))
+                known = [
+                    any(a <= x <= b for a, b in ledges) and y <= rp.LEDGE_Y1,
+                    rp.SER_X0 - rp.SHELL_WALL_T <= x <= rp.SER_X1 and y <= rp.SER_SHELL_Y1,   # pedestal + shell wall
+                    rp.MID_X0 <= x <= rp.MID_X1 and y <= rp.MID_Y1,                            # middle wall
+                    (rp.POCKET_X0 - rp.POCKET_WALL_T <= x <= rp.MID_X0
+                     and rp.SER_SHELL_Y1 <= y <= rp.SER_STOP_Y1),                              # glue pocket
+                    (any(a <= x <= b for a, b in corners)
+                     and rp.BOARD_Y1 - rp.CORNER_SIDE_L <= y <= rp.CORNER_Y1),
+                ]
+                self.assertTrue(any(known), (x, y))
 
     def test_serial_shell_face_0_8_behind_the_wall(self):
         self.assertAlmostEqual(rp.SER_FACE_Y - rp.WALL_OUTER_Y, 0.8)
@@ -149,40 +151,6 @@ class ShapeTest(unittest.TestCase):
 
     def test_serial_pcb_clears_the_rp2040_ledge(self):
         self.assertGreaterEqual(rp.LEDGE_X0 - rp.SER_PCB_X1, 0.15)
-
-    def test_serial_stops_hold_the_tail_end(self):
-        ym = rp.SER_STOP_Y0 + rp.CORNER_T / 2
-        for x in (rp.SER_PCB_X0 + 1.0, rp.SER_PCB_X1 - 1.0):
-            self.assertTrue(inside(self.shape, x, ym, rp.SER_STOP_TOP_Z - EPS), x)
-            self.assertFalse(inside(self.shape, x, rp.SER_STOP_Y0 - EPS, rp.SER_CZ), x)   # gap to the PCB end
-        self.assertAlmostEqual(rp.SER_STOP_Y0 - rp.SER_PCB_Y1, rp.CORNER_GAP)
-        self.assertFalse(inside(self.shape, rp.SER_CX, ym, rp.SER_CZ))        # middle open for the wires
-        self.assertTrue(inside(self.shape, rp.LEDGE_X0 - EPS, ym, rp.SER_STOP_TOP_Z - EPS))   # joins the ledge
-        self.assertGreaterEqual(rp.SER_STOP_TOP_Z, rp.SER_CZ + rp.SER_PCB_T / 2 + 0.3)
-        # the left one stays under the RP2040
-        self.assertFalse(inside(self.shape, rp.SER_PCB_X0 + 1.0, ym, rp.SER_STOP_TOP_Z + EPS))
-
-    def test_serial_side_arms_locate_the_pcb_sideways(self):
-        y = rp.SER_PCB_Y1 - 1.0
-        # line-to-line: the arms' inner faces are the PCB's side edges
-        self.assertAlmostEqual(rp.SER_ARM_X0, rp.SER_PCB_X0)
-        self.assertAlmostEqual(rp.SER_ARM_X1, rp.SER_PCB_X1)
-        for x_arm, x_gap in ((rp.SER_ARM_X0 - rp.CORNER_T / 2, rp.SER_ARM_X0 + EPS),
-                             (rp.SER_ARM_X1 + EPS, rp.SER_ARM_X1 - EPS)):
-            self.assertTrue(inside(self.shape, x_arm, y, rp.SER_STOP_TOP_Z - EPS), x_arm)
-            self.assertFalse(inside(self.shape, x_gap, y, rp.SER_CZ), x_gap)
-            self.assertFalse(inside(self.shape, x_arm, rp.SER_PCB_Y1 - rp.CORNER_SIDE_L - EPS, rp.SER_CZ), x_arm)
-
-    def test_right_serial_stop_locates_the_rp2040_left_edge(self):
-        ym = rp.SER_STOP_Y0 + rp.CORNER_T / 2
-        self.assertAlmostEqual(rp.BOARD_X0 - rp.BOARD_STOP_X, 0.1)
-        self.assertTrue(inside(self.shape, rp.BOARD_STOP_X - EPS, ym, rp.CORNER_TOP_Z - EPS))
-        self.assertTrue(inside(self.shape, rp.BOARD_STOP_X - EPS, ym, rp.PCB_Z1))
-        self.assertFalse(inside(self.shape, rp.BOARD_STOP_X - EPS, ym, rp.CORNER_TOP_Z + EPS))
-        self.assertFalse(inside(self.shape, rp.BOARD_STOP_X + rp.BOARD_SIDE_GAP / 2, ym, rp.PCB_Z1 - EPS))
-        # rises from over the serial PCB, still clear of the wires in the middle
-        self.assertTrue(inside(self.shape, rp.SER_PCB_X1 - rp.CORNER_REACH + EPS, ym, rp.PCB_Z1))
-        self.assertFalse(inside(self.shape, rp.SER_CX, ym, rp.PCB_Z1))
 
     def test_old_jack_features_gone(self):
         # plate is full thickness where the pocket and the leg slots were
@@ -241,11 +209,89 @@ class ShapeTest(unittest.TestCase):
             self.assertFalse(inside(self.shape, rp.SER_CX, y, rp.SER_Z0 + EPS), y)
         self.assertFalse(inside(self.shape, rp.SER_CX, rp.SER_SHELL_Y1 + EPS, rp.PLATE_Z1 + EPS))
 
-    def test_serial_pcb_tail_is_free(self):
+    def test_serial_measured_lengths(self):
+        self.assertAlmostEqual(rp.SER_SHELL_L, 8.5)
+        self.assertAlmostEqual(rp.SER_L, 14.0)
+        self.assertAlmostEqual(rp.SER_SHELL_Y1 - rp.SER_FACE_Y, 8.5)
+
+    def test_rev3_serial_stops_are_gone(self):
+        self.assertFalse(hasattr(rp, "make_serial_stops"))
+
+    def test_shell_side_wall_locates_the_shell(self):
+        y = rp.SER_SHELL_Y1 - 1.0
+        x = rp.SER_X0 - rp.SHELL_WALL_T / 2
+        self.assertTrue(inside(self.shape, x, y, rp.SER_CZ - EPS))
+        self.assertFalse(inside(self.shape, x, y, rp.SER_CZ + EPS))      # low enough to tilt the part in
+        self.assertFalse(inside(self.shape, rp.SER_X0 + EPS, y, rp.SER_Z0 + 0.5))   # line-to-line
+
+    def test_middle_wall_beside_the_shell_stays_at_ledge_height(self):
+        x = (rp.MID_X0 + rp.MID_X1) / 2
+        y = (rp.PLATE_REAR_Y + rp.SER_SHELL_Y1) / 2
+        self.assertTrue(inside(self.shape, x, y, rp.PCB_Z0 - EPS))
+        self.assertFalse(inside(self.shape, x, y, rp.PCB_Z0 + EPS))      # GP0/GP1 wires cross here
+
+    def test_middle_wall_is_the_tails_right_side_wall(self):
+        self.assertAlmostEqual(rp.MID_X0, rp.SER_X1)
+        self.assertAlmostEqual(rp.MID_X1, rp.BOARD_X0 - rp.BOARD_SIDE_GAP)
+        self.assertGreaterEqual(rp.MID_X0 - rp.SER_PCB_X1, 0.0)
+        self.assertLessEqual(rp.MID_X0 - rp.SER_PCB_X1, 0.1)
         y = (rp.SER_SHELL_Y1 + rp.SER_PCB_Y1) / 2
-        for x in (rp.SER_CX - rp.SER_PCB_W / 2 + 0.1, rp.SER_CX, rp.SER_CX + rp.SER_PCB_W / 2 - 0.1):
-            self.assertFalse(inside(self.shape, x, y, rp.PLATE_Z1 + EPS), x)
-            self.assertFalse(inside(self.shape, x, y, rp.SER_CZ), x)
+        self.assertTrue(inside(self.shape, rp.MID_X0 + EPS, y, rp.SER_CZ))
+        self.assertTrue(inside(self.shape, rp.MID_X0 + EPS, y, rp.MID_WALL_TOP_Z - EPS))
+        self.assertFalse(inside(self.shape, rp.SER_PCB_X1 - 0.1, y, rp.SER_CZ))
+
+    def test_tail_lip(self):
+        self.assertAlmostEqual(rp.MID_X0 - rp.SER_LIP_X0, rp.LIP_OVER)
+        self.assertAlmostEqual(rp.SER_LIP_Z0 - rp.SER_TAIL_Z1, rp.LIP_GAP)
+        self.assertLessEqual(rp.SER_LIP_Y1, rp.SER_PCB_Y1 - 2.0)        # wire pads in the last 2 mm stay clear
+        x = rp.SER_LIP_X0 + rp.LIP_OVER / 2
+        y = rp.SER_SHELL_Y1 + rp.SER_LIP_L / 2
+        self.assertTrue(inside(self.shape, x, y, rp.SER_LIP_Z0 + EPS))
+        self.assertFalse(inside(self.shape, x, y, rp.SER_LIP_Z0 - EPS))
+        self.assertFalse(inside(self.shape, x, y, rp.SER_LIP_Z0 + rp.LIP_T + EPS))
+        self.assertFalse(inside(self.shape, x, rp.SER_LIP_Y1 + EPS, rp.SER_LIP_Z0 + EPS))
+
+    def test_glue_pocket_floor_and_dam(self):
+        self.assertAlmostEqual(rp.DAM_Y0 - rp.SER_SHELL_Y1, rp.DAM_GAP)
+        self.assertAlmostEqual(rp.DAM_TOP_Z, rp.SER_TAIL_Z0 - rp.LIP_GAP)
+        self.assertAlmostEqual(rp.SER_TAIL_Z0 - rp.POCKET_FLOOR_Z, rp.POCKET_FLOOR_GAP)
+        self.assertGreaterEqual(rp.POCKET_FLOOR_GAP, 0.8)                 # the SMD part on the underside
+        # the gap between the bump and the dam goes down to the plate
+        self.assertFalse(inside(self.shape, rp.SER_CX, rp.SER_SHELL_Y1 + rp.DAM_GAP / 2, rp.PLATE_Z1 + EPS))
+        ym = (rp.DAM_Y0 + rp.DAM_Y1) / 2
+        self.assertTrue(inside(self.shape, rp.SER_CX, ym, rp.DAM_TOP_Z - EPS))
+        self.assertFalse(inside(self.shape, rp.SER_CX, ym, rp.DAM_TOP_Z + EPS))
+        y = rp.POCKET_KEY_Y + rp.POCKET_KEY_D        # beside the keys
+        self.assertTrue(inside(self.shape, rp.SER_CX, y, rp.POCKET_FLOOR_Z - EPS))
+        self.assertFalse(inside(self.shape, rp.SER_CX, y, rp.POCKET_FLOOR_Z + EPS))
+
+    def test_pocket_keys_go_through(self):
+        for dx in (-rp.POCKET_KEY_DX, rp.POCKET_KEY_DX):
+            x = rp.SER_CX + dx
+            self.assertFalse(inside(self.shape, x, rp.POCKET_KEY_Y, rp.PLATE_Z0 + EPS), dx)
+            self.assertFalse(inside(self.shape, x, rp.POCKET_KEY_Y, rp.POCKET_FLOOR_Z - EPS), dx)
+            self.assertTrue(inside(self.shape, x + rp.POCKET_KEY_D / 2 + 0.2, rp.POCKET_KEY_Y,
+                                   rp.POCKET_FLOOR_Z - EPS), dx)
+
+    def test_pocket_walls(self):
+        y = (rp.SER_SHELL_Y1 + rp.SER_PCB_Y1) / 2
+        top = rp.SER_STOP_TOP_Z
+        x_left = rp.POCKET_X0 - rp.POCKET_WALL_T / 2
+        self.assertTrue(inside(self.shape, x_left, y, top - EPS))
+        self.assertFalse(inside(self.shape, x_left, y, top + EPS))
+        self.assertFalse(inside(self.shape, rp.POCKET_X0 + 0.1, y, rp.SER_CZ))     # glue runs down the edge
+        self.assertAlmostEqual(rp.SER_PCB_X0 - rp.POCKET_X0, rp.CORNER_GAP)
+        # rear wall behind the tail end, closed across
+        self.assertAlmostEqual(rp.SER_STOP_Y0 - rp.SER_PCB_Y1, rp.CORNER_GAP)
+        ym = (rp.SER_STOP_Y0 + rp.SER_STOP_Y1) / 2
+        for x in (rp.SER_PCB_X0 + 0.5, rp.SER_CX, rp.SER_PCB_X1 - 0.5):
+            self.assertTrue(inside(self.shape, x, ym, top - EPS), x)
+        self.assertFalse(inside(self.shape, rp.SER_CX, rp.SER_STOP_Y0 - EPS, rp.SER_CZ))
+
+    def test_pocket_open_above_the_tail(self):
+        y = (rp.DAM_Y1 + rp.SER_PCB_Y1) / 2
+        for z in (rp.SER_CZ, rp.SER_TAIL_Z1 + EPS, rp.SER_STOP_TOP_Z + EPS):
+            self.assertFalse(inside(self.shape, rp.SER_CX, y, z), z)
 
 
 class ImportTest(unittest.TestCase):

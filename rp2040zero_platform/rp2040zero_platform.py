@@ -4,8 +4,9 @@ PCB. The case's TRRS hole is replaced by a USB-C slot: see case_usb_serial.py.
 
 A flat plate screwed from below against the underside of the case's two M4
 controller rings. The RP2040-Zero (components down) rests on two ledges so
-its USB-C sits in the case slot; the breakout's shell sits on a low pedestal
-in the new slot. Both are fixed with hot glue.
+its USB-C sits in the case slot, held by a rigid lip and a snap hook; the
+breakout's shell sits on a low pedestal in the new slot, its tail in a
+glue pocket.
 
 Frame: origin = centre of case ring A, X toward ring B, Y toward the user
 (rear wall at negative Y), Z up with Z = 0 on the ring tops. The rings'
@@ -99,13 +100,29 @@ WINDOW_FRONT_GAP = 2.0         # floor window ends this far before the PCB front
 # ---------------------------------------------------------------------------
 SER_W = 8.94                   # shell width (X)
 SER_H = 3.2                    # shell height (the slot is 3.62: 0.21 mm each way)
-SER_L = 14.6                   # overall length, shell face to PCB end (datasheet)
-SER_SHELL_L = 9.0              # shell length (Y); only sets where the pedestal ends
+SER_L = 14.0                   # overall length, shell face to PCB end (caliper, rev. 4; the datasheet says 14.6)
+SER_SHELL_L = 8.5              # shell + the leads/body bump behind it, as long as the pedestal (caliper)
 SER_PCB_W = 8.9                # breakout PCB width (caliper: just under 9.0; the datasheet 9.8 printed loose)
-SER_PCB_T = 0.8                # PCB thickness (thinner is fine: the tail is free)
+SER_PCB_T = 0.8                # PCB thickness
 SER_RECESS = 0.8               # shell front face this far behind the wall's outer face (1.0 sat too deep)
-SER_SIDE_GAP = 0.0             # breakout PCB side edges -> side arms: line-to-line (0.2 and 0.1 each way printed loose)
-BOARD_SIDE_GAP = 0.1           # RP2040 PCB left edge -> the right serial stop, which rises to the board
+BOARD_SIDE_GAP = 0.1           # RP2040 PCB left edge -> the middle wall
+
+# ---------------------------------------------------------------------------
+# Rev. 4: lips, middle wall and glue pocket (the breakout is mounted back
+# side up: wire pads up at the tail end, leads and the SMD part facing down)
+# ---------------------------------------------------------------------------
+LIP_OVER = 0.5                 # the rigid lips reach this far over a PCB edge
+LIP_GAP = 0.1                  # lip underside above the PCB top
+LIP_T = 0.6                    # tail lip thickness
+MID_WALL_TOP_Z = 2.15          # top of the middle wall, its RP2040 lip and the snap hook
+SHELL_WALL_T = 1.2             # left side wall beside the serial shell
+SER_LIP_L = 2.0                # tail lip length behind the bump (the wire pads are at the tail end)
+POCKET_WALL_T = 0.8            # glue pocket left wall
+POCKET_FLOOR_GAP = 0.8         # tail underside -> pocket floor (clears the SMD part, glue gets under the tail)
+DAM_GAP = 0.2                  # bump's rear face -> dam
+DAM_T = 1.2                    # dam thickness (Y); its rear face takes the unplug pull through the glue
+POCKET_KEY_D = 1.5             # glue key holes through the floor and the plate
+POCKET_KEY_DX = 2.5            # key holes at SER_CX +- this
 
 # ---------------------------------------------------------------------------
 # Derived values (do not edit)
@@ -149,9 +166,21 @@ SER_PCB_X1 = SER_CX + SER_PCB_W / 2.0
 SER_STOP_Y0 = SER_PCB_Y1 + CORNER_GAP        # stops behind the PCB end
 SER_STOP_Y1 = SER_STOP_Y0 + CORNER_T
 SER_STOP_TOP_Z = SER_CZ + SER_PCB_T / 2.0 + CORNER_ABOVE_PCB
-SER_ARM_X0 = SER_PCB_X0 - SER_SIDE_GAP       # left side arm inner face
-SER_ARM_X1 = SER_PCB_X1 + SER_SIDE_GAP       # right side arm inner face
 BOARD_STOP_X = BOARD_X0 - BOARD_SIDE_GAP     # right serial stop's face against the RP2040's left edge
+SER_TAIL_Z0 = SER_CZ - SER_PCB_T / 2.0       # tail underside (the photo side, now facing down)
+SER_TAIL_Z1 = SER_CZ + SER_PCB_T / 2.0       # tail top (wire pads)
+SER_LIP_X0 = SER_X1 - LIP_OVER               # tail lip, over the tail's right edge
+SER_LIP_Y1 = SER_SHELL_Y1 + SER_LIP_L
+SER_LIP_Z0 = SER_TAIL_Z1 + LIP_GAP
+MID_X0 = SER_X1                              # middle wall: right side wall of the shell and the tail ...
+MID_X1 = BOARD_STOP_X                        # ... and BOARD_SIDE_GAP off the RP2040's left edge
+MID_Y1 = -17.69                              # front end of the middle wall (Task 2: the RP2040 lip's end)
+POCKET_X0 = SER_PCB_X0 - CORNER_GAP          # glue pocket left wall, inner face
+POCKET_FLOOR_Z = SER_TAIL_Z0 - POCKET_FLOOR_GAP
+DAM_Y0 = SER_SHELL_Y1 + DAM_GAP
+DAM_Y1 = DAM_Y0 + DAM_T
+DAM_TOP_Z = SER_TAIL_Z0 - LIP_GAP
+POCKET_KEY_Y = (DAM_Y1 + SER_STOP_Y0) / 2.0
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -246,25 +275,47 @@ def make_corner_stops():
     return fuse_all(ls)
 
 
-def make_serial_stops():
-    """An L behind each corner of the breakout's PCB end (the middle stays
-    open for the wires): the back arms take the cable's push, the side arms
-    locate the PCB sideways. The right L runs into the RP2040's left ledge
-    and rises to the board's height, where it locates the RP2040's left
-    edge."""
-    y0, y1, top = SER_STOP_Y0, SER_STOP_Y1, SER_STOP_TOP_Z
-    x0, x1 = SER_ARM_X0, SER_ARM_X1
-    return fuse_all([
-        box(x0 - CORNER_T, x0, SER_PCB_Y1 - CORNER_SIDE_L, y1, PLATE_Z0, top),
-        box(x0 - CORNER_T, SER_PCB_X0 + CORNER_REACH, y0, y1, PLATE_Z0, top),
-        box(x1, LEDGE_X0 + LEDGE_W / 2, SER_PCB_Y1 - CORNER_SIDE_L, y1, PLATE_Z0, top),
-        box(SER_PCB_X1 - CORNER_REACH, BOARD_STOP_X, y0, y1, PLATE_Z0, CORNER_TOP_Z),
-    ])
-
-
 def make_pedestal():
     """Block under the serial USB-C shell: puts it at the slot height."""
     return box(SER_X0, SER_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, SER_Z0).common(make_keep())
+
+
+def make_shell_wall():
+    """Low wall along the serial shell's left side, line-to-line, up to the
+    shell's mid-height so the part can be tilted in."""
+    return box(SER_X0 - SHELL_WALL_T, SER_X0, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, SER_CZ).common(make_keep())
+
+
+def make_middle_wall():
+    """Rigid wall between the breakout and the RP2040: the right side wall of
+    the serial shell and tail, with a lip over the tail's right edge. Beside
+    the shell it stays at ledge height so the GP0/GP1 wires cross it."""
+    return fuse_all([
+        box(MID_X0, MID_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, PCB_Z0),
+        box(MID_X0, MID_X1, SER_SHELL_Y1, MID_Y1, PLATE_Z0, MID_WALL_TOP_Z),
+        box(SER_LIP_X0, MID_X0, SER_SHELL_Y1, SER_LIP_Y1, SER_LIP_Z0, SER_LIP_Z0 + LIP_T),
+    ])
+
+
+def make_glue_pocket():
+    """Pocket around the breakout's tail, filled with hot glue from above:
+    a raised floor under the tail, a dam behind the bump whose rear face
+    takes the unplug pull through the glue, a left wall and a closed rear
+    wall behind the tail end (the plug-in push). The middle wall is its
+    right side."""
+    x_out = POCKET_X0 - POCKET_WALL_T
+    return fuse_all([
+        box(POCKET_X0, MID_X0, DAM_Y0, SER_STOP_Y0, PLATE_Z0, POCKET_FLOOR_Z),
+        box(POCKET_X0, MID_X0, DAM_Y0, DAM_Y1, PLATE_Z0, DAM_TOP_Z),
+        box(x_out, POCKET_X0, SER_SHELL_Y1, SER_STOP_Y1, PLATE_Z0, SER_STOP_TOP_Z),
+        box(x_out, MID_X0, SER_STOP_Y0, SER_STOP_Y1, PLATE_Z0, SER_STOP_TOP_Z),
+    ])
+
+
+def make_pocket_keys():
+    """Two holes through the pocket floor and the plate that key the glue in."""
+    return fuse_all([cyl(SER_CX + dx, POCKET_KEY_Y, POCKET_KEY_D, PLATE_Z0 - 1.0, POCKET_FLOOR_Z + 1.0)
+                     for dx in (-POCKET_KEY_DX, POCKET_KEY_DX)])
 
 
 # ---------------------------------------------------------------------------
@@ -272,13 +323,15 @@ def make_pedestal():
 # ---------------------------------------------------------------------------
 def build():
     """Return the finished platform as a single solid."""
-    shape = fuse_all([make_plate(), make_ledges(), make_corner_stops(), make_serial_stops(), make_pedestal()])
-    return shape.cut(make_screw_cutters()).removeSplitter()
+    shape = fuse_all([make_plate(), make_ledges(), make_corner_stops(), make_pedestal(),
+                      make_shell_wall(), make_middle_wall(), make_glue_pocket()])
+    return shape.cut(make_screw_cutters()).cut(make_pocket_keys()).removeSplitter()
 
 
 def make_components():
     """The parts the platform holds, as one compound (for checks and drawings):
-    RP2040 PCB and USB-C shell, serial USB-C shell and its PCB tail."""
+    RP2040 PCB and USB-C shell, serial USB-C shell (with the bump behind it)
+    and its PCB tail."""
     return Part.makeCompound([
         box(BOARD_X0, BOARD_X1, BOARD_Y0, BOARD_Y1, PCB_Z0, PCB_Z1),
         box(BOARD_CX - USB_W / 2, BOARD_CX + USB_W / 2, USB_FACE_Y, USB_FACE_Y + USB_L, USB_Z0, PCB_Z0),
