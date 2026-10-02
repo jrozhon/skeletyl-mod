@@ -93,7 +93,7 @@ plate edge into the wall recess, as before.
 **Shared middle wall** between the breakout and the Zero. There is only
 0.93 mm between the serial shell (X 11.07) and the Zero's left edge
 (X 12.0), so instead of two hooks one rigid wall serves both parts:
-- X 11.07…11.90 (`BOARD_SIDE_GAP` 0.1 to the Zero), Y −31.6…−17.69. It
+- X 11.07…11.90 (`BOARD_SIDE_GAP` 0.1 to the Zero), Y −31.6…−20.23. It
   replaces rev. 3's raised right serial stop and merges with the left
   ledge where they overlap. Beside the shell (Y −31.6…−26.77) it only
   rises to Z 0.35, the ledge height, so the GP0/GP1 wires cross freely
@@ -141,8 +141,12 @@ their side arms.
 
 **Left lip** (rigid, on the middle wall): it overhangs the Zero's left edge
 by 0.5 (X 11.90…12.50, 0.1 off the edge with `BOARD_SIDE_GAP`), underside
-Z 1.45 (0.1 above the flat top), top Z 2.15. Y over pads 4–6 (GP3–GP5,
-all free) ± 1: Y −24.77…−17.69. No chamfer under it: one would reach
+Z 1.45 (0.1 above the flat top), top Z 2.15. Y over pads 4–5 ± 1:
+Y −24.77…−20.23. Pads 4–5 are unwired on **both** halves: GP3/GP4 on the
+right half, and GP29/GP28 on the left half, where the platform is
+mirrored but the Zero is not (WIRING.md §2). Pad 6 would be GP27 (R4,
+wired) on the left half, so the lip and the high middle wall end 0.79
+before its pad (final review, 2026-10-03). No chamfer under it: one would reach
 down into the PCB edge. The 0.6 overhang (0.7 thick) prints in PLA
 without support; so does the tail lip's 0.5.
 
@@ -153,7 +157,7 @@ At worst the left lip still overlaps it by 0.3 and the hook by 0.3.
 **Right snap hook** (printed in **PLA**, so the strain is kept ≤ 1.5 %):
 - Vertical cantilever outside the right ledge: X 30.70…31.50 (0.8 thick,
   `HOOK_T`; 0.4 off the ledge's outer face at X 30.30, `HOOK_GAP`). It
-  flexes outward in X and rises to Z 2.15.
+  flexes outward in X and rises to Z 2.55.
 - **Relief groove:** the arm stands in a rectangular groove in the plate,
   X 30.30…31.90 × Y −22.63…−19.83 (0.4 around the arm), 1.5 deep. Its
   0.5 floor (Z −5.25) is the arm's root, so the arm bends over 6.7 mm
@@ -161,8 +165,11 @@ At worst the left lip still overlaps it by 0.3 and the hook by 0.3.
 - The plate widens locally to X 32.5 for Y −23.0…−19.5 to carry the
   groove's outer side. Below the ring faces the case is free to X 45.
 - Lip 0.4 over the PCB's right edge (`HOOK_LIP`; X 29.60…30.00, the board
-  ends at X 30.0), underside Z 1.45, with a 45° ramp on top so the PCB
-  pushes the hook aside as it goes down. Under the part outside the PCB
+  ends at X 30.0), underside Z 1.45. Its tip has a 0.4 vertical land
+  (`HOOK_LAND`, two 0.2 layers) up to Z 1.85, and a 45° ramp from there
+  to the arm at Z 2.55 so the PCB pushes the hook aside as it goes down.
+  Without the land the catch was a knife edge that only the first,
+  drooping layer would hold (final review). Under the part outside the PCB
   (X 30.30…30.70) a 45° chamfer meets the arm, so only 0.7 overhangs.
 - Y centred on GP28 (pad 5), 2 wide: Y −22.23…−20.23. The neighbours'
   joints are ≥ 0.75 away: GP29 is free, GP27 (R4) is at −18.69.
@@ -239,7 +246,7 @@ New or changed in `rp2040zero_platform.py`:
    PNGs: an XZ cut through the hook and the left lip (Y −21.2), and one
    through the glue pocket (Y −22).
 3. **Test coupon** `hook_coupon.stl`: a cut-out of the platform,
-   X 0.5…32.5 × Y −27.5…−11 (past the board window, which would otherwise split it), with the Zero's lip and hook, the tail lip
+   X 0.5…32.5 × Y −31.6…−11 (the whole pedestal, and past the board window, which would otherwise split it), with the Zero's lip and hook, the tail lip
    and the glue pocket, to try with the real parts before printing the
    full platform. Same script, same parameters.
 

@@ -36,7 +36,7 @@ class ShapeTest(unittest.TestCase):
     def test_extents(self):
         bb = self.shape.optimalBoundingBox(True, False)   # the fast box is loose around curved edges
         self.assertAlmostEqual(bb.YMin, rp.PLATE_REAR_Y, places=4)
-        self.assertAlmostEqual(bb.ZMax, rp.MID_WALL_TOP_Z, places=4)
+        self.assertAlmostEqual(bb.ZMax, rp.HOOK_TOP_Z, places=4)
         self.assertAlmostEqual(bb.XMin, rp.LEFT_EDGE[0][0], places=4)
         self.assertAlmostEqual(bb.XMax, rp.RING_B[0] + rp.RING_PAD_R, places=4)
 
@@ -194,12 +194,31 @@ class ShapeTest(unittest.TestCase):
         self.assertAlmostEqual(rp.ZERO_LIP_X1 - rp.BOARD_X0, rp.LIP_OVER)
         self.assertAlmostEqual(rp.MID_Y1, rp.ZERO_LIP_Y1)
         x = rp.BOARD_X0 + rp.LIP_OVER / 2
-        for k in (4, 5, 6):                                  # GP3, GP4, GP5: no wires
+        for k in (4, 5):                                     # free on both halves: GP3/GP4 (right), GP29/GP28 (left)
             self.assertTrue(inside(self.shape, x, rp.zero_pad_y(k), rp.LIP_Z0 + EPS), k)
             self.assertFalse(inside(self.shape, x, rp.zero_pad_y(k), rp.LIP_Z0 - EPS), k)
         self.assertFalse(inside(self.shape, x, rp.zero_pad_y(2), rp.LIP_Z0 + EPS))   # GP1 (serial D-)
         # >= 0.7 between the lip and GP1's pad (pads are ~1.5 long)
         self.assertGreaterEqual(rp.ZERO_LIP_Y0 - (rp.zero_pad_y(2) + 0.75), 0.7)
+
+    def test_left_lip_clear_of_pad6_on_the_mirrored_half(self):
+        # The RP2040-Zero is not mirrored for the left half: there the lip's edge
+        # carries 5V..GP27, and pad 6 is GP27 (R4, wired). Keep >= 0.7 off its pad.
+        x = rp.BOARD_X0 + rp.LIP_OVER / 2
+        self.assertFalse(inside(self.shape, x, rp.zero_pad_y(6), rp.LIP_Z0 + EPS))
+        self.assertGreaterEqual((rp.zero_pad_y(6) - 0.75) - rp.ZERO_LIP_Y1, 0.7)
+        # nor the high middle wall beside it
+        self.assertFalse(inside(self.shape, rp.MID_X1 - EPS, rp.zero_pad_y(6), rp.PCB_Z1))
+
+    def test_hook_catch_has_a_land(self):
+        # The board, pushed against the middle wall by the ramp, ends at MID_X1 + BOARD_W.
+        # The lip must overlap it by >= 0.25 over HOOK_LAND (>= 2 layers), not only at a knife edge.
+        self.assertGreaterEqual(rp.HOOK_LAND, 0.4)
+        edge = rp.MID_X1 + rp.BOARD_W
+        for z in (rp.LIP_Z0 + 0.05, rp.LIP_Z0 + rp.HOOK_LAND - 0.05):
+            self.assertTrue(inside(self.shape, edge - 0.25, rp.HOOK_YC, z), z)
+            self.assertTrue(inside(self.shape, rp.HOOK_TIP_X + EPS, rp.HOOK_YC, z), z)
+        self.assertLessEqual(rp.HOOK_TOP_Z, 3.35 - 0.3)       # case probed clear to Z 3.35 there
 
     def test_hook_arm_and_lip(self):
         y = rp.HOOK_YC
@@ -379,6 +398,9 @@ class ShapeTest(unittest.TestCase):
                   (rp.SER_CX, (rp.DAM_Y0 + rp.DAM_Y1) / 2, rp.DAM_TOP_Z - EPS)):                  # dam
             self.assertTrue(inside(coupon, *p), p)
         self.assertAlmostEqual(bb.ZMin, rp.PLATE_Z0, places=4)
+        # the whole pedestal and shell wall, so the breakout can be tried on it
+        self.assertAlmostEqual(y0, rp.PLATE_REAR_Y)
+        self.assertTrue(inside(coupon, rp.SER_CX, rp.PLATE_REAR_Y + 0.5, rp.SER_Z0 - EPS))
 
 class ImportTest(unittest.TestCase):
     def test_check_clearance_uses_the_platform_module_inside_the_package(self):

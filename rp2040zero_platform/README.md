@@ -36,7 +36,8 @@ too.
 - **PLA** is fine: the snap hook bends about 1.1 % (it stands in a relief
   groove so it bends over 6.7 mm).
 - **Test coupon first:** `hook_coupon.stl` is the part of the platform
-  with the RP2040 lip, the snap hook, the tail lip and the glue pocket.
+  with the RP2040 lip, the snap hook, the pedestal, the tail lip and the
+  glue pocket.
   Print it the same way and check that the Zero clicks in and the
   breakout's tail sits under its lip before printing the whole platform.
   If the hook is too stiff or too loose, change `HOOK_T` / `HOOK_LIP`.
