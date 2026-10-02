@@ -296,6 +296,37 @@ class ShapeTest(unittest.TestCase):
             self.assertFalse(inside(self.shape, rp.SER_CX, y, rp.SER_Z0 + EPS), y)
         self.assertFalse(inside(self.shape, rp.SER_CX, rp.SER_SHELL_Y1 + EPS, rp.PLATE_Z1 + EPS))
 
+    # -- minimum wall thickness (PLA, 0.4 nozzle) --------------------------
+    def test_middle_wall_thickened_over_the_tail_lip(self):
+        # Between the shell and the RP2040 the wall can only be 0.83; over the
+        # tail lip it grows toward the breakout, up to the wall's top.
+        x = rp.SER_LIP_X0 + 0.1
+        y = rp.SER_SHELL_Y1 + rp.SER_LIP_L / 2
+        for z in (rp.SER_LIP_Z0 + 0.7, rp.MID_WALL_TOP_Z - EPS):
+            self.assertTrue(inside(self.shape, x, y, z), z)
+        self.assertGreaterEqual(rp.MID_X1 - rp.SER_LIP_X0, 1.2)
+        # only over the lip: the tail-end pads behind it stay open above
+        self.assertFalse(inside(self.shape, x, rp.SER_LIP_Y1 + EPS, rp.MID_WALL_TOP_Z - EPS))
+
+    def test_pocket_left_wall_thick_enough(self):
+        self.assertGreaterEqual(rp.POCKET_WALL_T, 1.2)
+
+    def test_strip_outside_the_hook_groove_thick_enough(self):
+        self.assertGreaterEqual(rp.HOOK_PLATE_X1 - rp.GROOVE_X1, 1.2)
+        self.assertTrue(inside(self.shape, rp.HOOK_PLATE_X1 - 0.1, rp.HOOK_YC, rp.PLATE_Z1 - EPS))
+        # and in front of / behind the groove, not just beside it
+        for y in (rp.GROOVE_Y0 - 1.15, rp.GROOVE_Y1 + 1.15):
+            self.assertTrue(inside(self.shape, rp.GROOVE_X1 + 0.3, y, rp.PLATE_Z1 - EPS), y)   # past the body (X 31.8)
+
+    def test_shell_side_wall_has_no_sliver_at_the_corner(self):
+        # the plate outline clips the wall diagonally along the case's rear-left corner:
+        # the wall starts where its full thickness fits
+        x0 = rp.SER_X0 - rp.SHELL_WALL_T
+        z = rp.SER_CZ - EPS
+        self.assertFalse(inside(self.shape, rp.SER_X0 - 0.1, rp.SHELL_WALL_Y0 - 0.1, z))
+        self.assertTrue(inside(self.shape, x0 + 0.05, rp.SHELL_WALL_Y0 + 0.05, z))
+        self.assertTrue(inside(self.shape, rp.SER_X0 - 0.05, rp.SHELL_WALL_Y0 + 0.05, z))
+
     def test_serial_measured_lengths(self):
         self.assertAlmostEqual(rp.SER_SHELL_L, 8.5)
         self.assertAlmostEqual(rp.SER_L, 14.0)
@@ -335,7 +366,7 @@ class ShapeTest(unittest.TestCase):
         y = rp.SER_SHELL_Y1 + rp.SER_LIP_L / 2
         self.assertTrue(inside(self.shape, x, y, rp.SER_LIP_Z0 + EPS))
         self.assertFalse(inside(self.shape, x, y, rp.SER_LIP_Z0 - EPS))
-        self.assertFalse(inside(self.shape, x, y, rp.SER_LIP_Z0 + rp.LIP_T + EPS))
+        self.assertFalse(inside(self.shape, x, y, rp.MID_WALL_TOP_Z + EPS))   # the lip rises to the wall top
         self.assertFalse(inside(self.shape, x, rp.SER_LIP_Y1 + EPS, rp.SER_LIP_Z0 + EPS))
 
     def test_glue_pocket_floor_and_dam(self):

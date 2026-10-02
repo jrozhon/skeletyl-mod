@@ -113,11 +113,11 @@ BOARD_SIDE_GAP = 0.1           # RP2040 PCB left edge -> the middle wall
 # ---------------------------------------------------------------------------
 LIP_OVER = 0.5                 # the rigid lips reach this far over a PCB edge
 LIP_GAP = 0.1                  # lip underside above the PCB top
-LIP_T = 0.6                    # tail lip thickness
 MID_WALL_TOP_Z = 2.15          # top of the middle wall and its RP2040 lip
 SHELL_WALL_T = 1.2             # left side wall beside the serial shell
+SHELL_WALL_Y0 = -30.4          # it starts here: further back the plate outline (case corner) clips it to a sliver
 SER_LIP_L = 2.0                # tail lip length behind the bump (the wire pads are at the tail end)
-POCKET_WALL_T = 0.8            # glue pocket left wall
+POCKET_WALL_T = 1.2            # glue pocket left wall
 POCKET_FLOOR_GAP = 0.8         # tail underside -> pocket floor (clears the SMD part, glue gets under the tail)
 DAM_GAP = 0.2                  # bump's rear face -> dam
 DAM_T = 1.2                    # dam thickness (Y); its rear face takes the unplug pull through the glue
@@ -134,7 +134,7 @@ HOOK_LIP = 0.4                 # hook reach over the PCB edge = how far the arm 
 HOOK_LAND = 0.4                # vertical face at the lip's tip (two 0.2 layers) before the ramp starts
 HOOK_GAP = 0.4                 # hook arm -> right ledge, and the relief groove's width around the arm
 HOOK_GROOVE_DEPTH = 1.5        # relief groove into the 2 mm plate: the arm bends from its 0.5 floor
-HOOK_PLATE_X1 = 32.5           # plate widened to here beside the hook (the case is free below the rings)
+HOOK_PLATE_X1 = 33.5           # plate widened to here beside the hook: 1.6 outside the groove (the case is free below the rings)
 
 # ---------------------------------------------------------------------------
 # Derived values (do not edit)
@@ -269,8 +269,8 @@ def make_plate():
     pad_a = cyl(ax, ay, 2 * RING_PAD_R, PLATE_Z0, PLATE_Z1)
     neck_a = box(LEFT_EDGE[0][0], ax + RING_PAD_R, RING_A_PAD_Y0, ay, PLATE_Z0, PLATE_Z1)
     pad_b = cyl(bx, by, 2 * RING_PAD_R, PLATE_Z0, PLATE_Z1)
-    hook_pad = box(PLATE_RIGHT_X - 1.0, HOOK_PLATE_X1, GROOVE_Y0 - HOOK_GAP, GROOVE_Y1 + HOOK_GAP,
-                   PLATE_Z0, PLATE_Z1)
+    m = HOOK_PLATE_X1 - GROOVE_X1                 # same margin in front of and behind the groove
+    hook_pad = box(PLATE_RIGHT_X - 1.0, HOOK_PLATE_X1, GROOVE_Y0 - m, GROOVE_Y1 + m, PLATE_Z0, PLATE_Z1)
     plate = fuse_all([body, pad_a, neck_a, pad_b, hook_pad])
     return plate.common(make_keep()).cut(make_window()).cut(make_hook_groove())
 
@@ -332,18 +332,21 @@ def make_pedestal():
 def make_shell_wall():
     """Low wall along the serial shell's left side, line-to-line, up to the
     shell's mid-height so the part can be tilted in."""
-    return box(SER_X0 - SHELL_WALL_T, SER_X0, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, SER_CZ).common(make_keep())
+    return box(SER_X0 - SHELL_WALL_T, SER_X0, SHELL_WALL_Y0, SER_SHELL_Y1, PLATE_Z0, SER_CZ)
 
 
 def make_middle_wall():
     """Rigid wall between the breakout and the RP2040: the right side wall of
     the serial shell and tail, with a lip over the tail's right edge and a
-    lip over the RP2040's left edge (pads 4-5, unwired on both halves). Beside the shell
-    it stays at ledge height so the GP0/GP1 wires cross it."""
+    lip over the RP2040's left edge (pads 4-5, unwired on both halves).
+    Beside the shell it stays at ledge height so the GP0/GP1 wires cross
+    it. Only 0.83 fits between the shell and the RP2040, so above the tail
+    lip it is thickened toward the breakout (1.33); further back the glue
+    in the pocket backs it."""
     return fuse_all([
         box(MID_X0, MID_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, PCB_Z0),
         box(MID_X0, MID_X1, SER_SHELL_Y1, MID_Y1, PLATE_Z0, MID_WALL_TOP_Z),
-        box(SER_LIP_X0, MID_X0, SER_SHELL_Y1, SER_LIP_Y1, SER_LIP_Z0, SER_LIP_Z0 + LIP_T),
+        box(SER_LIP_X0, MID_X0, SER_SHELL_Y1, SER_LIP_Y1, SER_LIP_Z0, MID_WALL_TOP_Z),
         box(MID_X1, ZERO_LIP_X1, ZERO_LIP_Y0, ZERO_LIP_Y1, LIP_Z0, MID_WALL_TOP_Z),
     ])
 

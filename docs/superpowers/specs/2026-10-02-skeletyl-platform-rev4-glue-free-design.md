@@ -86,7 +86,8 @@ plate edge into the wall recess, as before.
 
 **Shell side walls.**
 - *Left:* X `SER_X0` − 1.2 … `SER_X0` (line-to-line with the shell, as
-  rev. 3), Y −31.6…−26.77, up to the shell's mid-height (Z −1.25). It
+  rev. 3), Y −30.4…−26.77 (behind −30.4 the case corner clips it to a
+  sliver), up to the shell's mid-height (Z −1.25). It
   locates the shell sideways and is low enough to tilt the part in.
 - *Right:* the shared middle wall (below).
 
@@ -101,7 +102,16 @@ plate edge into the wall recess, as before.
 - It is the right side wall of the shell and the tail, line-to-line.
 - **Tail lip** to the left: 0.5 over the tail's right edge
   (X 10.57…11.07), underside Z −0.75 (0.1 above the tail's top face),
-  0.6 thick, Y −26.77…−24.77 (the first 2 mm of the tail behind the bump).
+  Y −26.77…−24.77 (the first 2 mm of the tail behind the bump). It rises
+  to the wall's top, which thickens the middle wall to 1.33 there; the
+  0.83 left beside the RP2040 lip is backed by the pocket's glue below
+  Z ≈ −0.35.
+
+**Minimum thickness check (2026-10-03, after review):** slicing the STL
+at 22 heights showed nothing thinner than 1.2 except the hook arm (0.8,
+meant to bend), the middle wall beside the RP2040 lip (0.83, limited by
+the 0.93 gap) and the ring B countersink breaking the plate's rear edge
+(since rev. 3).
   The back-side pads sit at the tail end (user, 2026-10-02), clear of the
   lip.
 - **Zero lip** to the right (section 2).
@@ -111,7 +121,7 @@ plate edge into the wall recess, as before.
   Y −21.07…−18.57 (0.2 off the tail end), X from the left pocket wall to
   the middle wall, up to Z −0.35 (0.5 above the tail top). The middle
   stays closed: the wires leave upward, not backward.
-- *Left wall:* X 1.15…1.95 (0.2 off the tail's left edge, so glue runs
+- *Left wall:* X 0.75…1.95 (1.2 thick) (0.2 off the tail's left edge, so glue runs
   down the edge), Y −26.77…−18.57 (the whole tail), same height.
 - *Right wall:* the middle wall.
 - *Floor:* Z −2.45, 0.8 under the tail's underside, from the dam to the
@@ -162,8 +172,8 @@ At worst the left lip still overlaps it by 0.3 and the hook by 0.3.
   X 30.30…31.90 × Y −22.63…−19.83 (0.4 around the arm), 1.5 deep. Its
   0.5 floor (Z −5.25) is the arm's root, so the arm bends over 6.7 mm
   (Z −5.25 → the lip at 1.45) instead of 5.2.
-- The plate widens locally to X 32.5 for Y −23.0…−19.5 to carry the
-  groove's outer side. Below the ring faces the case is free to X 45.
+- The plate widens locally to X 33.5, 1.6 around the groove on its three
+  free sides, to carry the groove's outer side. Below the ring faces the case is free to X 45.
 - Lip 0.4 over the PCB's right edge (`HOOK_LIP`; X 29.60…30.00, the board
   ends at X 30.0), underside Z 1.45. Its tip has a 0.4 vertical land
   (`HOOK_LAND`, two 0.2 layers) up to Z 1.85, and a 45° ramp from there
