@@ -102,9 +102,8 @@ plate edge into the wall recess, as before.
 - **Tail lip** to the left: 0.5 over the tail's right edge
   (X 10.57…11.07), underside Z −0.75 (0.1 above the tail's top face),
   0.6 thick, Y −26.77…−24.77 (the first 2 mm of the tail behind the bump).
-  This assumes the back-side pads sit near the tail end, clear of the
-  lip; the user confirms before modelling (`SER_LIP_L` shortens it if
-  not).
+  The back-side pads sit at the tail end (user, 2026-10-02), clear of the
+  lip.
 - **Zero lip** to the right (section 2).
 
 **Glue pocket** around the tail end:
@@ -140,11 +139,17 @@ Z 1.45 (0.1 above the flat top), top Z 2.15. Y over pads 4–6 (GP3–GP5,
 all free) ± 1: Y −24.77…−17.69. The underside has a 45° chamfer toward the
 wall so it prints without support.
 
-**Right snap hook:**
-- Vertical cantilever outside the right ledge: X 30.40…31.20 (0.8 thick,
-  `HOOK_T`), from the plate top (Z −3.75) up to Z 2.15. It flexes outward
-  in X.
-- Lip 0.5 over the PCB's right edge (X 29.50…30.00 over the board, which
+**Right snap hook** (printed in **PLA**, so the strain is kept ≤ 1.5 %):
+- Vertical cantilever outside the right ledge: X 30.70…31.50 (0.8 thick,
+  `HOOK_T`; 0.4 off the ledge's outer face at X 30.30, `HOOK_GAP`). It
+  flexes outward in X and rises to Z 2.15.
+- **Relief groove:** the arm stands in a rectangular groove in the plate,
+  X 30.30…31.90 × Y −22.63…−19.83 (0.4 around the arm), 1.5 deep. Its
+  0.5 floor (Z −5.25) is the arm's root, so the arm bends over 6.7 mm
+  (Z −5.25 → the lip at 1.45) instead of 5.2.
+- The plate widens locally to X 32.5 for Y −23.0…−19.5 to carry the
+  groove's outer side. Below the ring faces the case is free to X 45.
+- Lip 0.4 over the PCB's right edge (`HOOK_LIP`; X 29.60…30.00, the board
   ends at X 30.0), underside Z 1.45, with a 45° ramp on top so the PCB
   pushes the hook aside as it goes down.
 - Y centred on GP28 (pad 5), 2 wide: Y −22.23…−20.23. The neighbours'
@@ -153,13 +158,9 @@ wall so it prints without support.
   the plate and Z 3.35 (probed 2026-10-02 on
   `case_v4_103_usb_serial.stl`). Ring B's flat face (X 30.93) only starts
   at Y ≤ −24.
-- The plate outline reaches X 31.8 (`PLATE_RIGHT_X`), so the hook stands
-  on the plate. The 0.1 gap between the arm and the right ledge (X 30.30)
-  lets it flex.
-- Strain: deflection 0.6 (lip 0.5 + gap 0.1) over a 5.2 arm (Z −3.75 →
-  the lip at 1.45), 0.8 thick: 1.5·t·δ/L² ≈ 2.7 %. Fine in PETG, marginal
-  in PLA. Hence the test coupon (below) and the `HOOK_T` / `HOOK_LIP`
-  parameters.
+- Strain: deflection 0.4 (the lip) over a 6.7 arm, 0.8 thick:
+  1.5·t·δ/L² ≈ 1.1 %, within PLA's ≈ 1.5 % for a snap fit that is opened
+  a few times. The test coupon (below) checks it on the user's printer.
 
 **Insertion:** components down, USB end toward the wall. Slide the left
 edge under the left lip, lower the right edge: it snaps under the hook.
@@ -192,13 +193,15 @@ New or changed in `rp2040zero_platform.py`:
 | `SER_SHELL_L` | 8.5 | shell + bump length (measured) |
 | `SER_L` | 14.0 | overall length (measured) |
 | `MID_WALL_TOP_Z` | 2.15 | middle wall top |
-| `LIP_OVER` | 0.5 | how far each lip and the hook reach over a PCB edge |
+| `LIP_OVER` | 0.5 | how far each rigid lip reaches over a PCB edge |
 | `LIP_GAP` | 0.1 | lip underside above the PCB top |
 | `SER_LIP_L` | 2.0 | tail lip length behind the bump |
 | `ZERO_PAD1_Y` / `ZERO_PAD_PITCH` | 2.38 / 2.54 | USB edge → pad 1 centre (so pad 4 ≈ 10.0), pitch |
 | `HOOK_T` | 0.8 | snap-hook arm thickness |
 | `HOOK_W` | 2.0 | snap-hook width along Y |
-| `HOOK_GAP` | 0.1 | hook arm → right ledge |
+| `HOOK_LIP` | 0.4 | how far the snap hook reaches over the PCB edge (= its deflection) |
+| `HOOK_GAP` | 0.4 | hook arm → right ledge (also the groove width) |
+| `HOOK_GROOVE_DEPTH` | 1.5 | relief groove depth into the 2 mm plate |
 | `POCKET_FLOOR_GAP` | 0.8 | tail underside → pocket floor |
 | `POCKET_L` | 3.0 | pocket length in front of the tail end |
 | `POCKET_KEY_D` | 1.5 | key hole diameter |
@@ -210,7 +213,8 @@ New or changed in `rp2040zero_platform.py`:
    - the held parts (Zero PCB + shell; breakout shell, bump and tail with
      the new lengths) don't intersect the part;
    - each lip's underside is `LIP_GAP` above its PCB and reaches `LIP_OVER`
-     over the PCB edge; the left lip and the hook sit at the pad positions
+     over the PCB edge (the hook `HOOK_LIP`); the hook's groove floor is
+     0.5 thick and its arm touches nothing but the floor; the left lip and the hook sit at the pad positions
      above and stay ≥ 0.7 clear of the used pads (GP0, GP1, GP27);
    - hook arm free of the ledge by `HOOK_GAP`;
    - glue pocket: floor, dam, key holes through the plate, rear wall 0.2
