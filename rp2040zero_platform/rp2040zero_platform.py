@@ -53,6 +53,8 @@ SER_SLOT_X = (SER_SLOT_CX - SER_SLOT_W / 2.0, SER_SLOT_CX + SER_SLOT_W / 2.0)
 SER_SLOT_Z = USB_SLOT_Z
 RING_B_FLAT_X = 30.93          # case ring B has a flat face toward the board at this X, Y <= -24, Z <= 1
 RING_B_FREE_Y = -22.5          # in front of this Y the case is clear right of the board (up to X 38)
+RING_B_HOOK_Y = RING_B[1] + RING_FACE_OD / 2.0   # ring B's front-most point (-22.97); in front of it the case is
+RING_B_HOOK_X = 38.9           # clear right of the board up to this X, at every height (probed 2026-10-03)
 # Inner face of the slanted left wall (X as a function of Y) plus the rear
 # corner, offset 0.5 mm into the free space; the last point is on the rear
 # edge. The plate is clipped to the right of this polyline.
@@ -94,6 +96,7 @@ CORNER_SIDE_L = 3.0            # side arm runs this far back from the PCB front 
 CORNER_ABOVE_PCB = 0.5         # stops stand this far above the PCB top (drop-in lip, glue here)
 WINDOW_INSET = 1.5             # floor window inset from the PCB side edges
 WINDOW_FRONT_GAP = 2.0         # floor window ends this far before the PCB front edge
+BAND_W = 4.0                   # band across the window's rear end, under the USB-C shell: ties the two sides together
 
 # ---------------------------------------------------------------------------
 # USB-C serial breakout: mid-mount receptacle, PCB through the shell's middle
@@ -113,28 +116,33 @@ BOARD_SIDE_GAP = 0.1           # RP2040 PCB left edge -> the middle wall
 # ---------------------------------------------------------------------------
 LIP_OVER = 0.5                 # the rigid lips reach this far over a PCB edge
 LIP_GAP = 0.1                  # lip underside above the PCB top
-MID_WALL_TOP_Z = 2.15          # top of the middle wall and its RP2040 lip
+MID_WALL_TOP_Z = 4.0           # top of the middle wall and its RP2040 lip (2.55 thick; the case is clear to Z 12 above)
 SHELL_WALL_T = 1.2             # left side wall beside the serial shell
+SHELL_WALL_GAP = 0.15          # shell -> left side wall (line-to-line made the breakout hard to put in)
 SHELL_WALL_Y0 = -30.4          # it starts here: further back the plate outline (case corner) clips it to a sliver
-SER_LIP_L = 2.0                # tail lip length behind the bump (the wire pads are at the tail end)
-POCKET_WALL_T = 1.2            # glue pocket left wall
-POCKET_FLOOR_GAP = 0.8         # tail underside -> pocket floor (clears the SMD part, glue gets under the tail)
-DAM_GAP = 0.2                  # bump's rear face -> dam
-DAM_T = 1.2                    # dam thickness (Y); its rear face takes the unplug pull through the glue
-POCKET_KEY_D = 1.5             # glue key holes through the floor and the plate
-POCKET_KEY_DX = 2.5            # key holes at SER_CX +- this
+POCKET_WALL_T = 1.2            # glue pocket left wall and the trough's back wall
+RIB_T = 1.2                    # glue rib behind the tail end: the glue on top wraps over it into the trough
+TROUGH_L = 2.0                 # glue trough behind the rib (Y)
 ZERO_PAD1_Y = 2.38             # USB-end PCB edge -> pad 1 centre along the long edges (user: pad 4 at ~10 mm)
 ZERO_PAD_PITCH = 2.54
-ZERO_LIP_MARGIN = 1.0          # the left lip covers pads 4-5 and this much past them: free on both halves
+ZERO_LIP_PADS = (3, 5)         # the left lip covers pads 3-5: GP2-GP4 (right half), 3V3/GP29/GP28 (left half),
+                               # all free in the hand-wired build (pad 3 is RGB DIN/VCC in the flex build)
+ZERO_LIP_MARGIN = 1.0          # ... and this much past them
                                # (GP3/GP4 on the right; the Zero is not mirrored, so GP29/GP28 on the left)
-HOOK_PAD = 5                   # right-edge pad under the snap hook (GP28, no wire)
-HOOK_T = 0.8                   # hook arm thickness (X)
-HOOK_W = 2.0                   # hook width (Y)
-HOOK_LIP = 0.4                 # hook reach over the PCB edge = how far the arm bends
+# The snap hook is a solid head (the catch) on the free end of a horizontal
+# leaf spring. Both stand on the bed in a slot through the plate. The leaf
+# runs forward outside the front-right corner stop to its root near the
+# plate's front edge. It flexes outward in X, so it bends along its printed
+# lines, not across the layers (rev. 4's upright arm, and then a 1.2 column
+# on a leaf, snapped along a layer). The head is rigid: nothing thin stands
+# up. The leaf stays below the PCB, so the right-edge wires are free.
+HOOK_T = 1.6                   # leaf thickness (X): four 0.4 lines
+HOOK_W = 2.4                   # head length (Y), ending with the left lip over pads 4-5 (GP29/GP28, no wires);
+                               # it starts 0.3 in front of ring B (RING_B_HOOK_Y)
+HOOK_LIP = 0.7                 # catch reach over the PCB edge = how far the head moves aside (>= 0.6 grip with the board's play)
 HOOK_LAND = 0.4                # vertical face at the lip's tip (two 0.2 layers) before the ramp starts
-HOOK_GAP = 0.4                 # hook arm -> right ledge, and the relief groove's width around the arm
-HOOK_GROOVE_DEPTH = 1.5        # relief groove into the 2 mm plate: the arm bends from its 0.5 floor
-HOOK_PLATE_X1 = 33.5           # plate widened to here beside the hook: 1.6 outside the groove (the case is free below the rings)
+HOOK_GAP = 0.4                 # head -> right ledge, leaf -> corner stop, and the slot's margin past the travel
+HOOK_SLOT_M = 1.7              # plate strip outside the slot (closes a frame around it; the case is free below the rings)
 
 # ---------------------------------------------------------------------------
 # Derived values (do not edit)
@@ -183,39 +191,40 @@ SER_PCB_Y1 = SER_FACE_Y + SER_L              # end of the PCB tail (pads U, D+, 
 SER_PCB_X0 = SER_CX - SER_PCB_W / 2.0
 SER_PCB_X1 = SER_CX + SER_PCB_W / 2.0
 SER_STOP_Y0 = SER_PCB_Y1 + CORNER_GAP        # stops behind the PCB end
-SER_STOP_Y1 = SER_STOP_Y0 + CORNER_T
+RIB_Y1 = SER_STOP_Y0 + RIB_T
+TROUGH_Y1 = RIB_Y1 + TROUGH_L
+POCKET_Y1 = TROUGH_Y1 + POCKET_WALL_T        # back of the trough's back wall
 SER_STOP_TOP_Z = SER_CZ + SER_PCB_T / 2.0 + CORNER_ABOVE_PCB
 BOARD_STOP_X = BOARD_X0 - BOARD_SIDE_GAP     # right serial stop's face against the RP2040's left edge
 SER_TAIL_Z0 = SER_CZ - SER_PCB_T / 2.0       # tail underside (the photo side, now facing down)
 SER_TAIL_Z1 = SER_CZ + SER_PCB_T / 2.0       # tail top (wire pads)
-SER_LIP_X0 = SER_X1 - LIP_OVER               # tail lip, over the tail's right edge
-SER_LIP_Y1 = SER_SHELL_Y1 + SER_LIP_L
-SER_LIP_Z0 = SER_TAIL_Z1 + LIP_GAP
 MID_X0 = SER_X1                              # middle wall: right side wall of the shell and the tail ...
 MID_X1 = BOARD_STOP_X                        # ... and BOARD_SIDE_GAP off the RP2040's left edge
 LIP_Z0 = PCB_Z1 + LIP_GAP                    # underside of the RP2040 lip and the hook
 ZERO_LIP_X1 = BOARD_X0 + LIP_OVER
-ZERO_LIP_Y0 = zero_pad_y(4) - ZERO_LIP_MARGIN
-ZERO_LIP_Y1 = zero_pad_y(5) + ZERO_LIP_MARGIN
+ZERO_LIP_Y0 = zero_pad_y(ZERO_LIP_PADS[0]) - ZERO_LIP_MARGIN
+ZERO_LIP_Y1 = zero_pad_y(ZERO_LIP_PADS[1]) + ZERO_LIP_MARGIN
 MID_Y1 = ZERO_LIP_Y1                         # the middle wall ends with the RP2040 lip
-HOOK_YC = zero_pad_y(HOOK_PAD)
-HOOK_Y0 = HOOK_YC - HOOK_W / 2.0
-HOOK_Y1 = HOOK_YC + HOOK_W / 2.0
-HOOK_X0 = LEDGE_X1 + HOOK_GAP                # arm inner face
-HOOK_X1 = HOOK_X0 + HOOK_T
+HOOK_Y1 = ZERO_LIP_Y1                        # clear of GP27 (pad 6) like the left lip
+HOOK_Y0 = HOOK_Y1 - HOOK_W
+HOOK_YC = (HOOK_Y0 + HOOK_Y1) / 2.0
+HOOK_X0 = LEDGE_X1 + HOOK_GAP                # head inner face
+LEAF_X0 = BOARD_X1 + CORNER_GAP + CORNER_T + HOOK_GAP   # leaf inner face, outside the corner stop's side arm
+LEAF_X1 = LEAF_X0 + HOOK_T
+HOOK_X1 = LEAF_X1                            # head and leaf outer face
 HOOK_TIP_X = BOARD_X1 - HOOK_LIP
-HOOK_TOP_Z = LIP_Z0 + HOOK_LAND + (LEDGE_X1 - HOOK_TIP_X)   # 45 deg ramp from the land to the arm
-HOOK_ROOT_Z = PLATE_Z1 - HOOK_GROOVE_DEPTH   # the arm bends from the groove floor
-GROOVE_X0 = LEDGE_X1
-GROOVE_X1 = HOOK_X1 + HOOK_GAP
-GROOVE_Y0 = HOOK_Y0 - HOOK_GAP
-GROOVE_Y1 = HOOK_Y1 + HOOK_GAP
+HOOK_TOP_Z = LIP_Z0 + HOOK_LAND + (LEDGE_X1 - HOOK_TIP_X)   # 45 deg ramp from the land to the catch
+LEAF_ROOT_Y = CORNER_Y1 + 0.3                # the leaf is rooted in the plate here, past the corner stop
+LEAF_TOP_Z = PCB_Z0                          # leaf top: the ledge height, below the PCB
+SLOT_X0 = LEDGE_X1                           # slot through the plate around the head and the leaf
+SLOT_X1 = HOOK_X1 + HOOK_LIP + HOOK_GAP      # room for the full travel outward, plus HOOK_GAP
+SLOT_Y0 = HOOK_Y0 - HOOK_GAP
+HOOK_PLATE_X1 = SLOT_X1 + HOOK_SLOT_M        # plate widened to here along the slot
 POCKET_X0 = SER_PCB_X0 - CORNER_GAP          # glue pocket left wall, inner face
-POCKET_FLOOR_Z = SER_TAIL_Z0 - POCKET_FLOOR_GAP
-DAM_Y0 = SER_SHELL_Y1 + DAM_GAP
-DAM_Y1 = DAM_Y0 + DAM_T
-DAM_TOP_Z = SER_TAIL_Z0 - LIP_GAP
-POCKET_KEY_Y = (DAM_Y1 + SER_STOP_Y0) / 2.0
+LAYER_H = 0.2                                # print layer height
+RIB_TOP_Z = SER_TAIL_Z1 - LAYER_H            # rib a layer under the tail top: the wires lie flat over it
+TROUGH_FLOOR_Z = RIB_TOP_Z - 1.6             # trough 1.6 deep below the rib top
+SHELL_WALL_X1 = SER_X0 - SHELL_WALL_GAP      # left side wall's inner face
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -269,22 +278,27 @@ def make_plate():
     pad_a = cyl(ax, ay, 2 * RING_PAD_R, PLATE_Z0, PLATE_Z1)
     neck_a = box(LEFT_EDGE[0][0], ax + RING_PAD_R, RING_A_PAD_Y0, ay, PLATE_Z0, PLATE_Z1)
     pad_b = cyl(bx, by, 2 * RING_PAD_R, PLATE_Z0, PLATE_Z1)
-    m = HOOK_PLATE_X1 - GROOVE_X1                 # same margin in front of and behind the groove
-    hook_pad = box(PLATE_RIGHT_X - 1.0, HOOK_PLATE_X1, GROOVE_Y0 - m, GROOVE_Y1 + m, PLATE_Z0, PLATE_Z1)
+    m = HOOK_SLOT_M                               # same margin behind the slot and in front of the root
+    hook_pad = box(PLATE_RIGHT_X - 1.0, HOOK_PLATE_X1, SLOT_Y0 - m, LEAF_ROOT_Y + m, PLATE_Z0, PLATE_Z1)
     plate = fuse_all([body, pad_a, neck_a, pad_b, hook_pad])
-    return plate.common(make_keep()).cut(make_window()).cut(make_hook_groove())
+    return plate.common(make_keep()).cut(make_window()).cut(make_hook_slot())
 
 
-def make_hook_groove():
-    """Relief groove around the snap hook's root, so the arm bends over the
-    plate's thickness too."""
-    return box(GROOVE_X0, GROOVE_X1, GROOVE_Y0, GROOVE_Y1, HOOK_ROOT_Z, PLATE_Z1 + 1.0)
+def make_hook_slot():
+    """Slot through the plate around the hook's head and leaf, with room for
+    the full travel outward, from behind the head to the leaf's root."""
+    return fuse_all([
+        box(SLOT_X0, SLOT_X1, SLOT_Y0, HOOK_Y1 + HOOK_GAP, PLATE_Z0 - 1.0, PLATE_Z1 + 1.0),
+        box(LEAF_X0 - HOOK_GAP, SLOT_X1, SLOT_Y0, LEAF_ROOT_Y, PLATE_Z0 - 1.0, PLATE_Z1 + 1.0),
+    ])
 
 
 def make_window():
-    """Floor window under the board, open toward the rear edge."""
+    """Floor window under the board (BOOT/RESET), closed toward the rear edge
+    by a band under the USB-C shell so the plate's two sides can't spread or
+    squeeze."""
     return box(BOARD_X0 + WINDOW_INSET, BOARD_X1 - WINDOW_INSET,
-               PLATE_REAR_Y - 1.0, BOARD_Y1 - WINDOW_FRONT_GAP, PLATE_Z0 - 1.0, PLATE_Z1 + 1.0)
+               PLATE_REAR_Y + BAND_W, BOARD_Y1 - WINDOW_FRONT_GAP, PLATE_Z0 - 1.0, PLATE_Z1 + 1.0)
 
 
 def make_screw_cutters():
@@ -330,58 +344,58 @@ def make_pedestal():
 
 
 def make_shell_wall():
-    """Low wall along the serial shell's left side, line-to-line, up to the
-    shell's mid-height so the part can be tilted in."""
-    return box(SER_X0 - SHELL_WALL_T, SER_X0, SHELL_WALL_Y0, SER_SHELL_Y1, PLATE_Z0, SER_CZ)
+    """Low wall along the serial shell's left side, SHELL_WALL_GAP off it, up
+    to the shell's mid-height."""
+    return box(SHELL_WALL_X1 - SHELL_WALL_T, SHELL_WALL_X1, SHELL_WALL_Y0, SER_SHELL_Y1, PLATE_Z0, SER_CZ)
 
 
 def make_middle_wall():
     """Rigid wall between the breakout and the RP2040: the right side wall of
-    the serial shell and tail, with a lip over the tail's right edge and a
-    lip over the RP2040's left edge (pads 4-5, unwired on both halves).
-    Beside the shell it stays at ledge height so the GP0/GP1 wires cross
-    it. Only 0.83 fits between the shell and the RP2040, so above the tail
-    lip it is thickened toward the breakout (1.33); further back the glue
-    in the pocket backs it."""
+    the serial shell and tail, with a lip over the RP2040's left edge
+    (pads 3-5, unwired on both halves). Nothing reaches over the tail, so
+    the breakout drops straight in. Beside the shell it stays at ledge
+    height so the GP0/GP1 wires cross it. Only 0.83 fits between the shell
+    and the RP2040; below the PCB it is fused with the left ledge (1.83).
+    Past the lip it carries on, low (below the RP2040's PCB), as the glue
+    trough's right side."""
     return fuse_all([
         box(MID_X0, MID_X1, PLATE_REAR_Y, SER_SHELL_Y1, PLATE_Z0, PCB_Z0),
-        box(MID_X0, MID_X1, SER_SHELL_Y1, MID_Y1, PLATE_Z0, MID_WALL_TOP_Z),
-        box(SER_LIP_X0, MID_X0, SER_SHELL_Y1, SER_LIP_Y1, SER_LIP_Z0, MID_WALL_TOP_Z),
+        box(MID_X0, MID_X1, MID_Y1 - 1.0, POCKET_Y1, PLATE_Z0, SER_STOP_TOP_Z),
+        box(MID_X0, MID_X1, min(SER_SHELL_Y1, ZERO_LIP_Y0), MID_Y1, PLATE_Z0, MID_WALL_TOP_Z),
         box(MID_X1, ZERO_LIP_X1, ZERO_LIP_Y0, ZERO_LIP_Y1, LIP_Z0, MID_WALL_TOP_Z),
     ])
 
 
 def make_glue_pocket():
-    """Pocket around the breakout's tail, filled with hot glue from above:
-    a raised floor under the tail, a dam behind the bump whose rear face
-    takes the unplug pull through the glue, a left wall and a closed rear
-    wall behind the tail end (the plug-in push). The middle wall is its
-    right side."""
+    """Glue from the top only. Nothing under the tail (the shell alone sets
+    the breakout's level on the pedestal); a left wall beside the tail; a
+    rib behind the tail end, level with its top (the plug-in push; the wires
+    lie flat over it), and behind the rib a trough.
+    The glue goes over the tail end, the solder joints and the rib into the
+    trough, so the unplug pull hooks the glue behind the rib. The middle
+    wall is the right side."""
     x_out = POCKET_X0 - POCKET_WALL_T
     return fuse_all([
-        box(POCKET_X0, MID_X0, DAM_Y0, SER_STOP_Y0, PLATE_Z0, POCKET_FLOOR_Z),
-        box(POCKET_X0, MID_X0, DAM_Y0, DAM_Y1, PLATE_Z0, DAM_TOP_Z),
-        box(x_out, POCKET_X0, SER_SHELL_Y1, SER_STOP_Y1, PLATE_Z0, SER_STOP_TOP_Z),
-        box(x_out, MID_X0, SER_STOP_Y0, SER_STOP_Y1, PLATE_Z0, SER_STOP_TOP_Z),
+        box(x_out, POCKET_X0, SER_SHELL_Y1, POCKET_Y1, PLATE_Z0, SER_STOP_TOP_Z),
+        box(x_out, MID_X0, SER_STOP_Y0, RIB_Y1, PLATE_Z0, RIB_TOP_Z),
+        box(x_out, MID_X0, RIB_Y1, TROUGH_Y1, PLATE_Z0, TROUGH_FLOOR_Z),
+        box(x_out, MID_X0, TROUGH_Y1, POCKET_Y1, PLATE_Z0, SER_STOP_TOP_Z),
     ])
 
 
-def make_pocket_keys():
-    """Two holes through the pocket floor and the plate that key the glue in."""
-    return fuse_all([cyl(SER_CX + dx, POCKET_KEY_Y, POCKET_KEY_D, PLATE_Z0 - 1.0, POCKET_FLOOR_Z + 1.0)
-                     for dx in (-POCKET_KEY_DX, POCKET_KEY_DX)])
-
-
 def make_hook():
-    """Snap hook over the RP2040's right edge: a vertical arm standing on the
-    groove floor, flexing outward, with a lip that has a vertical land at
-    its tip (the catch), a 45 deg ramp above it (the board pushes it aside)
-    and a 45 deg chamfer under the part outside the PCB (shorter overhang)."""
-    arm = box(HOOK_X0, HOOK_X1, HOOK_Y0, HOOK_Y1, HOOK_ROOT_Z, HOOK_TOP_Z)
+    """Snap hook over the RP2040's right edge: one straight solid head on
+    the bed (the same profile end to end), on the free end of a leaf that
+    runs forward to its root, flexing outward. The head's lip has a
+    vertical land at its tip, a 45 deg ramp above it (the board pushes it
+    aside) and a 45 deg chamfer under the part outside the PCB (shorter
+    overhang)."""
+    leaf = box(LEAF_X0, LEAF_X1, HOOK_Y1 - 0.5, LEAF_ROOT_Y + 0.5, PLATE_Z0, LEAF_TOP_Z)
+    post = box(HOOK_X0, HOOK_X1, HOOK_Y0, HOOK_Y1, PLATE_Z0, HOOK_TOP_Z)
     lip = prism_xz([(HOOK_TIP_X, LIP_Z0), (LEDGE_X1, LIP_Z0), (HOOK_X0, LIP_Z0 - HOOK_GAP),
                     (HOOK_X0, HOOK_TOP_Z), (LEDGE_X1, HOOK_TOP_Z), (HOOK_TIP_X, LIP_Z0 + HOOK_LAND)],
                    HOOK_Y0, HOOK_Y1)
-    return arm.fuse(lip)
+    return fuse_all([leaf, post, lip])
 
 
 # ---------------------------------------------------------------------------
@@ -391,7 +405,7 @@ def build():
     """Return the finished platform as a single solid."""
     shape = fuse_all([make_plate(), make_ledges(), make_corner_stops(), make_pedestal(),
                       make_shell_wall(), make_middle_wall(), make_glue_pocket(), make_hook()])
-    return shape.cut(make_screw_cutters()).cut(make_pocket_keys()).removeSplitter()
+    return shape.cut(make_screw_cutters()).removeSplitter()
 
 
 def make_components():
@@ -407,16 +421,17 @@ def make_components():
     ])
 
 
-COUPON = (0.5, HOOK_PLATE_X1, PLATE_REAR_Y, -11.0)   # X0, X1, Y0, Y1 of the test print: the whole pedestal,
-                                                     # and past the board window, which would split it
+COUPON = (0.5, HOOK_PLATE_X1, PLATE_REAR_Y, CORNER_Y1 + 3.0)   # X0, X1, Y0, Y1 of the test print: the whole
+                                                               # pedestal, the board window and the hook's leaf root
 
 
 def make_coupon(shape):
-    """Cut-out of the platform with the RP2040 lip, the snap hook, the tail
-    lip and the glue pocket, to try with the real parts before printing the
+    """Cut-out of the platform with the RP2040 lip, the snap hook, the band,
+    the pedestal and the glue pocket, to try with the real parts before printing the
     whole platform."""
     x0, x1, y0, y1 = COUPON
-    return shape.common(box(x0, x1, y0, y1, PLATE_Z0 - 1.0, HOOK_TOP_Z + 1.0)).removeSplitter()
+    z1 = max(HOOK_TOP_Z, MID_WALL_TOP_Z, CORNER_TOP_Z) + 1.0
+    return shape.common(box(x0, x1, y0, y1, PLATE_Z0 - 1.0, z1)).removeSplitter()
 
 
 # ---------------------------------------------------------------------------

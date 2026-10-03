@@ -7,8 +7,8 @@ BOOT/RESET reachable through a window with the bottom plate off) and a
 small mid-mount **USB-C breakout** for the half-to-half serial link, in a
 USB-C slot that replaces the case's TRRS hole. The RP2040-Zero snaps in (a
 rigid lip on its left edge, a snap hook on its right) with no glue; the
-breakout's tail sits in a glue pocket that locks one blob of hot glue in
-mechanically.
+breakout drops in between two walls and is held by one blob of hot glue on
+top of its tail end, hooked behind a rib.
 
 Design notes and measurements: `docs/superpowers/specs/2026-10-02-skeletyl-platform-rev4-glue-free-design.md`
 (rev. 4) on top of `docs/superpowers/specs/2026-09-25-skeletyl-usb-serial-design.md` (rev. 3) and
@@ -33,14 +33,19 @@ too.
 - **Platform:** underside (the face with the two screw countersinks) on the
   bed, no supports. 0.2 mm layers, 3 perimeters. As modelled it fits the
   right half; mirror it for the left.
-- **PLA** is fine: the snap hook bends about 1.1 % (it stands in a relief
-  groove so it bends over 6.7 mm).
+- **PLA** is fine: the snap hook is one straight, solid 4 × 2.4 mm head
+  (the catch, over pad 5) on the free end of a 1.6 mm leaf that runs
+  forward outside the front-right corner stop. The leaf bends along its
+  printed lines, about 1.0 % for the catch's 0.7 mm reach. Thin upright parts that bend across the layers
+  snapped twice.
 - **Test coupon first:** `hook_coupon.stl` is the part of the platform
-  with the RP2040 lip, the snap hook, the pedestal, the tail lip and the
-  glue pocket.
+  with the RP2040 lip, the snap hook, the band under the USB-C end, the
+  pedestal and the glue pocket.
   Print it the same way and check that the Zero clicks in and the
-  breakout's tail sits under its lip before printing the whole platform.
-  If the hook is too stiff or too loose, change `HOOK_T` / `HOOK_LIP`.
+  breakout drops in and sits level on the pedestal before printing the
+  whole platform.
+  If the hook is too stiff or too loose, change `HOOK_T` (leaf thickness)
+  / `HOOK_LIP`.
 
 ## Assemble
 
@@ -51,15 +56,15 @@ the bottom plate, the ledges, walls, lips and the hook point up toward the switc
    the tail end) and all wires to the RP2040-Zero's pads.
 2. **Breakout, back side up** (the side with the wire pads faces up, the
    leads and the small SMD part face the platform; USB-C works either way
-   round). Set the shell on the pedestal with its right side against the
-   middle wall, tilting it so the tail's right edge goes under the tail
-   lip, then lower the left side. The bump behind the shell sits against
-   the dam.
-3. **Glue pocket.** Fill the pocket around the tail with hot glue, over
-   the tail end, the solder joints and the first mm of wire, until glue
-   shows in the two holes underneath. Trim anything that comes through
-   flush with the underside. This one blob takes the pull when you unplug
-   the link cable.
+   round). Drop it straight in between the left wall and the middle
+   wall, shell flat on the pedestal, tail end against the rib. Only the
+   shell rests on the platform; the tail floats, nothing is under it.
+3. **Glue, from the top only.** Put one blob of hot glue over the tail
+   end, the solder joints and the first mm of wire, and over the rib into
+   the trough behind it. Hold the breakout down on the pedestal until it
+   sets. The glue hooked behind the rib takes the pull when you unplug
+   the link cable. Don't let it run over the trough's right side toward
+   the RP2040.
 4. **Board.** Components down, USB-C toward the wall. Slide its left edge
    under the lip on the middle wall, then press the right edge down: it
    pushes the snap hook aside and clicks under it. No glue. To take it
@@ -78,12 +83,15 @@ the bottom plate, the ledges, walls, lips and the hook point up toward the switc
 | `BOARD_Z_SHIFT` / `BOARD_X_SHIFT` | 0.0 | Nudge the board if its shell catches in the slot |
 | `CORNER_T` / `CORNER_GAP` | 2.5 / 0.2 | Corner stops at the board's front: arm thickness and gap to the PCB edges (the board has 0.33 mm to the wall behind it) |
 | `SER_H` / `SER_W` | 3.2 / 8.94 | Serial shell; sets the pedestal height. The slot has 0.21 mm each way vertically, 0.44 sideways |
-| `SER_L` / `SER_SHELL_L` / `SER_PCB_W` | 14.0 / 8.5 / 8.9 | Breakout overall length, shell + bump length, PCB width (caliper); they place the dam, the tail lip and the pocket |
+| `SER_L` / `SER_SHELL_L` / `SER_PCB_W` | 14.0 / 8.5 / 8.9 | Breakout overall length, shell + bump length, PCB width (caliper); they place the pedestal, the rib and the pocket |
+| `SHELL_WALL_GAP` | 0.15 | Serial shell → left wall: play so the breakout drops in (the middle wall on its right is line-to-line) |
 | `BOARD_SIDE_GAP` | 0.1 | RP2040 left edge → the middle wall |
-| `LIP_OVER` / `LIP_GAP` | 0.5 / 0.1 | Rigid lips over the tail and the RP2040: reach over the edge, gap above the PCB |
-| `HOOK_T` / `HOOK_LIP` / `HOOK_GAP` | 0.8 / 0.4 / 0.4 | Snap hook arm thickness, reach over the PCB (= its bend), gap to the ledge and groove width |
+| `LIP_OVER` / `LIP_GAP` / `MID_WALL_TOP_Z` | 0.5 / 0.1 / 4.0 | RP2040 left lip: reach over the edge, gap above the PCB, top (2.55 thick) |
+| `ZERO_LIP_PADS` | (3, 5) | Pads under the left lip (7.1 mm long). Pad 3 is free only in the hand-wired build (RGB DIN/VCC in the flex build): use (4, 5) there |
+| `HOOK_T` / `HOOK_W` / `HOOK_LIP` / `HOOK_GAP` | 1.6 / 2.4 / 0.7 / 0.4 | Snap hook leaf thickness, head length (ring B behind it, GP27 in front), reach over the PCB (= its travel), gap to the ledge / corner stop and slot margin past the travel |
+| `BAND_W` | 4.0 | Band across the window's rear end, under the RP2040's USB-C: keeps the two sides of the plate from spreading or squeezing. BOOT/RESET stay reachable behind it |
 | `ZERO_PAD1_Y` | 2.38 | USB-end PCB edge → pad 1 centre (pad 4 ≈ 10 mm); places the left lip and the hook over unused pads |
-| `POCKET_FLOOR_GAP` / `DAM_GAP` | 0.8 / 0.2 | Glue under the tail (clears the SMD part); bump → dam |
+| `RIB_T` / `TROUGH_L` | 1.2 / 2.0 | Glue rib behind the tail end (a layer under the tail top, so the wires lie flat over it) and the 1.6 deep trough behind it that the glue hooks into |
 | `SER_RECESS` / `USB_RECESS` | 0.8 / 1.0 | Shell faces behind the wall's outer face (wall is 2 mm); the serial shell sat too deep at 1.0 |
 | `CSK_ANGLE` / `CSK_DEPTH` | 90 / 1.2 | Countersink for the conical heads: Ø6.9 at the underside down to the Ø4.5 hole. A full-depth seat does not fit the 2 mm plate, so the head hangs ≤ 1.3 mm below it (0.95 mm clear of the bottom plate) |
 

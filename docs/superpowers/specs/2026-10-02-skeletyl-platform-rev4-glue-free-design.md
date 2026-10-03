@@ -263,3 +263,138 @@ New or changed in `rp2040zero_platform.py`:
 ## Not in scope
 
 The case, the pin map, the firmware, the serial breakout and the cable.
+
+## Revision after the first coupon print (2026-10-03)
+
+Feedback from the user on the printed coupon, and what changed. This
+replaces the parts of sections 1 and 2 above that it contradicts.
+
+**Zero: lip and hook too thin.**
+- Left lip top raised from Z 2.15 to **3.0** (`MID_WALL_TOP_Z`), so the lip
+  is 1.55 thick instead of 0.7. The case is clear to Z 12 above the board.
+  The middle wall is still 0.83 between the shell and the Zero (limited by
+  the 0.93 gap), but only from the ledge top (Z 0.35) up: below that it is
+  fused with the left ledge (1.83).
+- Snap hook **3.5 wide** (`HOOK_W`, was 2.0), Y −23.73…−20.23, ending with
+  the left lip. GP27 (pad 6) limits it in front. Behind it, ring B's curved
+  side was probed on the case STL: in front of Y −24.0 it is beyond
+  X 32.08, ≥ 0.18 off the arm bent outward (`RING_B_HOOK_Y`). The extra
+  width doesn't change the hook's strain, only how hard it grips.
+
+**Plate "fork" spreading/squeezing:** a 4 mm **band** (`BAND_W`) closes the
+window's rear end, under the Zero's USB-C shell (0.9 below it). The user
+confirmed BOOT/RESET sit further from the USB end, so they stay reachable.
+
+**Breakout seesawed on the dam.** The dam (0.1 under the modelled tail)
+lifted the shell off the pedestal, so the real PCB sits lower in the shell
+than modelled. The breakout was also hard to insert: tilting the tail's
+edge under the tail lip makes the shell's upper corner dig into the middle
+wall and its lower corner hit the left wall.
+- Removed: the dam, the raised pocket floor, the key holes (no glue under
+  the tail or through the plate, per the user), and the **tail lip** (the
+  user chose dropping it over sliding the part 5.5 mm in under it).
+- Nothing is under or over the tail: the shell on the pedestal alone sets
+  the level, and the breakout drops straight in. The left shell wall is now
+  0.15 off the shell (`SHELL_WALL_GAP`); the middle wall stays
+  line-to-line on the right.
+- **Glue from the top only:** behind the tail end (0.2 off) a 1.2 **rib**
+  up to Z −0.35 (the plug-in push), then a 2.0 **trough** (floor Z −1.65)
+  and a 1.2 back wall. The left pocket wall runs along the whole length,
+  and the middle wall continues low (Z −0.35, below the Zero's PCB) as the
+  trough's right side. The glue goes over the tail end, the joints and the
+  rib into the trough, so on unplugging, the glue hooked behind the rib
+  takes the pull.
+
+### Second coupon (2026-10-03)
+
+The breakout fits. Two changes:
+- **Left lip broke on first use.** It now covers pads **3–5** (Y −27.31…−20.23,
+  7.1 long, was 4.5) and rises to Z **4.0** (2.55 thick, was 1.55). Pad 3 is
+  GP2 (right half) / 3V3 (left half), both free in the hand-wired build; in
+  the flex build they carry RGB, so set `ZERO_LIP_PADS` to (4, 5) there. It
+  still stays ≥ 0.7 off GP1 (pad 2) and GP27 (pad 6). The tall wall now
+  starts 0.54 beside the shell's rear, still clear of the shell.
+- **Wires at the tail end:** the rib is now level with the tail top
+  (Z −0.85, `RIB_TOP_Z`) instead of 0.5 above it, so the wires lie flat
+  over it. The trough floor dropped to Z −2.45, keeping a 1.6 deep hook for
+  the glue. The left wall, the trough's back wall and its low right side
+  stay at Z −0.35 to keep the glue in.
+- **Correction:** the part that broke was the **snap hook**, not the left
+  lip. It snapped off along a layer: the upright arm bent across the layer
+  lines, PLA's weakest direction, despite the nominal 1.1 % strain. The
+  lip changes above stay (they cost nothing).
+- **New snap hook, a horizontal leaf spring:** a 1.2 thick leaf (X 30.70…31.90)
+  stands on the bed in a slot through the plate (0.4 around it). It runs
+  from its root in the front-right corner stop (Y −13.27) back to the
+  catch (Y −23.43…−20.23, `HOOK_W` 3.2) and is only as tall as the ledges
+  (Z 0.35), so it stays below the PCB and away from the right-edge wires.
+  The catch's lip, land, ramp and chamfer are unchanged. It flexes outward
+  in X, which bends the leaf along its printed lines: 0.4 at the catch over
+  8.7 mm ≈ 0.95 % strain. The plate is widened to X 34.0 along the slot,
+  so a 1.7 strip closes a frame around it. The catch was narrowed from
+  3.5 to 3.2 so the bent leaf stays in front of Y −23.5, where ring B's
+  curved side is beyond X 33.19 (probed). The bent end reaches X 32.4,
+  0.8 clear.
+- The coupon now runs to the plate's front edge (it holds the leaf's root)
+  and up to Z 5.0 (it had clipped the 4.0 lip at 3.55).
+- **Catch reach 0.7** (`HOOK_LIP`, was 0.4), at the user's request: with
+  the board's 0.3 sideways play it still overlaps the PCB by ≥ 0.6. The
+  leaf bends 0.7: ≈ 1.7 % strain along the extrusions. The bent end
+  reaches X 32.8, 0.4 clear of ring B. The ramp now tops out at Z 2.85, and
+  the catch's flat underside overhangs 1.0 (X 29.3…30.3) before the
+  chamfer.
+
+### Third coupon (2026-10-03): the hook's catch broke again
+
+The part above the leaf snapped with little pressure. **Root cause (my
+error):** the slot left 0.4 outside the catch's column, but the catch must
+move 0.7 aside since `HOOK_LIP` went to 0.7. Below the plate top, the
+column hit the slot's edge after 0.4, and the board bent the thin
+(1.2) column above it across the layers. No test checked the travel.
+
+New hook:
+- **Head:** a solid block from the bed to the catch, X 30.70…34.70 (4.0)
+  × Y −22.67…−20.23 (`HOOK_W` 2.4). It starts 0.3 in front of ring B's
+  front-most point (Y −22.97 = ring centre + Ø10.6/2). In front of that
+  the case is clear right of the board to X 38.9 at every height (probed).
+  A first try at Y −22.98 touched the ring: the 0.2 sample grid had
+  missed the circle's last sliver. Same lip, land, ramp and chamfer.
+- **Leaf:** 1.6 thick (`HOOK_T`), X 33.10…34.70, outside the front-right
+  corner stop's side arm (0.4 gap). It runs from the head forward to its
+  root in the plate at Y −9.27, 11.0 free, up to Z 0.35 (below the PCB).
+  Strain 1.5·1.6·0.7/11.0² ≈ 1.4 % along the extrusions.
+- **Slot:** through the plate around the head and the leaf, reaching
+  `HOOK_LIP` + 0.4 = 1.1 past their outer face (X 35.8). The plate is widened to
+  X 37.5 around it (`HOOK_SLOT_M` 1.7). New tests check the full travel and the
+  solid head.
+- The coupon now reaches Y −4.57 to include the leaf's root.
+
+### Fourth coupon (2026-10-03)
+
+- **Head lengthened toward the front** (`HEAD_FRONT_L` 2.0): the head body
+  now runs Y −22.63…−18.23 (4.4) beside the board, 0.7 off its edge and
+  so past pad 6 (GP27's joint). The catch over the PCB still ends at
+  Y −20.23. The leaf's root moved forward to Y −7.27 (`CORNER_Y1` + 0.3)
+  to keep 11.0 free: strain stays ≈ 1.4 %. The plate frame around the slot
+  now reaches Y −5.57, still clear of the case.
+- **Rib a layer lower:** top at Z −1.05, 0.2 under the tail top
+  (`RIB_TOP_Z`). The trough floor follows it to Z −2.65 (1.6 deep).
+- **Catch over pads 4 and 5** (user): the catch now runs Y −24.77…−20.23
+  (`CATCH_Y0` = pad 4 − 1.0), like the original left lip. Behind the
+  head, ring B rises only to Z 0.25 (probed), and the catch's underside
+  is at Z ≥ 1.05, so it reaches back over ring B. Only the head's body
+  (from the bed up) has to stay in front of the ring (Y ≥ −22.67). A 0.4
+  wide 45° wedge under the catch's outer edge (X 30.7…31.1) carries it
+  back from the head. It stops 0.5 short of the catch's rear end
+  (`CATCH_WEDGE_SHORT`; 0.5 overhang): at full length its lower corner came
+  0.13 from ring B with the hook pushed aside. A new test shifts the hook
+  outward by its full travel and measures ≥ 0.2 to the case STL's
+  triangles.
+- **Reverted to one straight head** (user: the stepped head, with its body
+  run forward and its catch run back over a wedge, was too complex and
+  likely to fail in print). The head and its catch are one block with the
+  same profile end to end, Y −22.63…−20.23 (2.4): ring B is behind it,
+  GP27 in front. The user chose this over a 4.4 head over pads 5–6, which
+  would need R4 moved off GP27. The leaf keeps its root at Y −7.27, so it
+  is 13.0 free: ≈ 1.0 % strain. The pushed-aside clearance test against
+  the case STL stays.

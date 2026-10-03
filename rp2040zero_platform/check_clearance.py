@@ -164,7 +164,8 @@ def main(case_path):
     # (file, axis, case plane, platform/component plane, u, v): Y-Z sections
     # through the rings and both USB-C centres; an X-Z "rear view" cut
     # inside the 2 mm wall showing both shells in their slots; X-Z cuts
-    # through the snap hook (with the RP2040 lip) and the glue pocket.
+    # through the snap hook (with the RP2040 lip) and the breakout's tail; the
+    # Y-Z cut through the serial shell shows the glue rib and trough.
     views = [
         ("sec_ringA.png", 0, ax, ax, 1, 2),
         ("sec_ringB.png", 0, bx, bx, 1, 2),
@@ -172,7 +173,7 @@ def main(case_path):
         ("sec_usb.png", 0, rp.BOARD_CX, rp.BOARD_CX, 1, 2),
         ("sec_wall.png", 1, rp.WALL_OUTER_Y + 1.5, rp.WALL_OUTER_Y + 1.5, 0, 2),
         ("sec_hook.png", 1, rp.HOOK_YC, rp.HOOK_YC, 0, 2),
-        ("sec_pocket.png", 1, rp.POCKET_KEY_Y, rp.POCKET_KEY_Y, 0, 2),
+        ("sec_pocket.png", 1, rp.SER_SHELL_Y1 + 2.0, rp.SER_SHELL_Y1 + 2.0, 0, 2),
     ]
     plo = np.minimum(lo, [bb.XMin, rp.WALL_OUTER_Y - 1.0, bb.ZMin])
     phi = np.maximum(hi, [bb.XMax, bb.YMax, rp.PCB_Z1 + 2.0])
